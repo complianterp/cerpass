@@ -1,0 +1,1327 @@
+namespace cerpass.db;
+
+using cerpass.db::masterdata.MODULE;
+using cerpass.db::masterdata.SUB_MODULE;
+using cerpass.db::masterdata.PROCESSES;
+using cerpass.db::masterdata.SUB_PROCESSES;
+using cerpass.db::masterdata.CUSTOMERS;
+using cerpass.db::masterdata.LOGICAL_SYSTEMS;
+using cerpass.db::masterdata.USERS;
+using cerpass.db::masterdata.RULE_SET;
+using cerpass.db::masterdata.ACTIVITY;
+using cerpass.db::masterdata.ACT_TCODE;//In Use
+using cerpass.db::masterdata.ACT_AUTH;//In Use
+using cerpass.db::masterdata.TESTS;
+using cerpass.db::masterdata.TEST_ACTIVITY;
+using cerpass.db::masterdata.RISKS;
+using cerpass.db::masterdata.RISK_RATING;
+using cerpass.db::masterdata.RISK_TEST;
+using cerpass.db::masterdata.BUSINESS_CONTROL;
+using cerpass.db::masterdata.TESTS_BUSINESS_CONTROL;
+using cerpass.db::sapdata.TSTC;
+using cerpass.db::sapdata.TOBJT;
+using cerpass.db::sapdata.UST12;//In Use
+using cerpass.db::sapdata.UST10S;//In Use
+using cerpass.db::sapdata.UST10C;//In Use
+using cerpass.db::sapdata.USR10;//In Use
+using cerpass.db::sapdata.AGR_1016;//In Use
+
+context scan {
+
+    //SCAN AUTH ---------------------------------------------------------------------------------------------------------------------------------------------
+
+
+    //SCAN AUTH PREP-----------------------------------------------------------------------------------------
+			/*View to add an extra VON column into UST12 which displays only those values listed left of
+    		the first * found the VON string.  The * is included as well.
+    		
+    		This is required to cater for those older versions of SAP which allowed invalid combinations of
+    		wild cards that would cause issues with the fuzzy matching logic.*/
+
+    view SCAN1_AUTH_P00_UST12_CONVERT_P01 as
+        select from UST12 as A1
+        {
+            A1.OBJCT,
+            A1.AUTH,
+            A1.FIELD,
+            A1.VON,
+            left("VON", (locate("VON", '*'))) "VON_LEFT_OF_STAR",
+            A1.BIS
+        }
+        where
+                OBJCT <>   'TSTC'
+            and VON   like '%*%'
+    union
+        select from UST12 as A1
+        {
+            A1.OBJCT,
+            A1.AUTH,
+            A1.FIELD,
+            A1.VON,
+            A1.VON "VON_LEFT_OF_STAR",
+            A1.BIS
+        }
+        where
+                OBJCT <>       'TSTC'
+            and VON   not like '%*%';
+
+    //------------------------------------------------------------------------------------------------------
+			/*View to add an extra BIS column into UST12 which displays only those values listed left of
+    		the first * found the BIS string.  The * is included as well.
+    		
+    		This is required to cater for those older versions of SAP which allowed invalid combinations of
+    		wild cards that would cause issues with the fuzzy matching logic.*/
+
+    view SCAN1_AUTH_P00_UST12_CONVERT_P02 as
+        select from SCAN1_AUTH_P00_UST12_CONVERT_P01 as A1
+        {
+            A1.OBJCT,
+            A1.AUTH,
+            A1.FIELD,
+            A1.VON,
+            A1.VON_LEFT_OF_STAR,
+            A1.BIS,
+            left("BIS", (locate("BIS", '*'))) "BIS_LEFT_OF_STAR"
+        }
+        where
+            BIS like '%*%'
+    union
+        select from SCAN1_AUTH_P00_UST12_CONVERT_P01 as A1
+        {
+            A1.OBJCT,
+            A1.AUTH,
+            A1.FIELD,
+            A1.VON,
+            A1.VON_LEFT_OF_STAR,
+            A1.BIS,
+            A1.BIS "BIS_LEFT_OF_STAR"
+        }
+        where
+               BIS not like '%*%'
+            or BIS is       null;
+
+    //-------------------------------------------------------------------
+		/*View to add an extra VON column into UST12 where all * values have been replaces with a % */
+		/*This is required to make the fuzzy matching logic to work*/
+
+    view SCAN1_AUTH_P00_UST12_CONVERT_P03 as
+        select from SCAN1_AUTH_P00_UST12_CONVERT_P02 as A1
+        {
+            A1.OBJCT,
+            A1.AUTH,
+            A1.FIELD,
+            A1.VON,
+            A1.VON_LEFT_OF_STAR,
+            replace("VON_LEFT_OF_STAR", '*', '%') "VON_WILD_CARD",
+            A1.BIS,
+            A1.BIS_LEFT_OF_STAR
+        };
+
+    //------------------------------------------------------------------------------------------------------
+		/*View to add an extra AUTH_VALUES_VON column into ACT_AUTH where all * values have been replaces with a %*/
+		/*This is required to make the fuzzy matching logic to work*/
+
+    view SCAN1_AUTH_P00_ACT_AUTH_CONVERT as
+        select from ACT_AUTH as A2
+        {
+            A2.ACT_ID,
+            A2.GROUP_NUMBER,
+            A2.OBJECT,
+            A2.AUTH_FIELD,
+            A2.AUTH_VALUES_VON,
+            replace("AUTH_VALUES_VON", '*', '%') "AUTH_VALUES_VON_WILD_CARD",
+            A2.AUTH_VALUES_BIS,
+            A2.LOGIC_OPERATOR,
+            A2.ACTIVE
+        }
+        where
+            ACTIVE = true;
+
+    //------------------------------------------------------------------------------------------------------
+
+
+    //SCAN AUTH SCAN-------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+    //------------------------------------------------------------------------------------------------------
+		/*View produces a list of matches between a record in ACT_AUTH and UST12. */
+
+		/*UST12 and ACT_AUTH are joined on FIELD in UST12 and FIELD in ACT_AUTH as well
+ 		as OBJCT in UST12 and OBJECT in ACT_AUTH.  Different where clauses are then used
+ 		in each select in the UNION to produce different types of matches required*/
+
+		/*This is a UNION that combines 3 different queries*/
+
+		/*This select in the UNION produces all matches that occur from a range values and direct matches.
+ 		The where clause takes the AUTH_VALUES_VON value from SCAN1_AUTH_P00_ACT_AUTH_CONVERT and checks 
+ 		if it between VON_LEFT_OF_STAR and BIS_LEFT_OF_STAR in SCAN1_AUTH_P00_UST12_CONVERT_P03 or,
+ 		if the VON_LEFT_OF_STAR value from SCAN1_AUTH_P00_UST12_CONVERT_P03 is between AUTH_VALUES_VON and 
+ 		AUTH_VALUES_BIS in SCAN1_AUTH_P00_ACT_AUTH_CONVERT this produces all range matches.
+ 		The where clause also checks if AUTH_VALUES_VON in SCAN1_AUTH_P00_ACT_AUTH_CONVERT is equal to 
+ 		VON_LEFT_OF_STAR is SCAN1_AUTH_P00_UST12_CONVERT_P03 producing all the direct value matches.*/
+
+    view SCAN1_AUTH_P01_ALL_MATCHES as
+        select from SCAN1_AUTH_P00_UST12_CONVERT_P03 as A1
+        join (
+                    SCAN1_AUTH_P00_ACT_AUTH_CONVERT as A2
+        )                                                  on
+                A1.FIELD = A2."AUTH_FIELD"
+            and A1.OBJCT = A2."OBJECT"
+        {
+            A1.OBJCT,
+            A1.AUTH,
+            A1.FIELD,
+            A1.VON,
+            A1.VON_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
+            A1."VON_WILD_CARD",//This is the converted VON field for the fuzzy matching
+            A1.BIS,
+            A1.BIS_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
+            A2.ACT_ID,
+            A2.GROUP_NUMBER,
+            A2.OBJECT,
+            A2.AUTH_FIELD,
+            A2.AUTH_VALUES_VON,
+            A2."AUTH_VALUES_VON_WILD_CARD", //This is the converted VON field for the fuzzy matching
+            A2.AUTH_VALUES_BIS,
+            A2."LOGIC_OPERATOR"
+        }
+        where
+            (
+                (
+                    (A2."AUTH_VALUES_VON")  between A1."VON_LEFT_OF_STAR" and A1."BIS_LEFT_OF_STAR"
+                )
+            )
+            or (
+                (
+                    (A1."VON_LEFT_OF_STAR") between A2."AUTH_VALUES_VON" and A2."AUTH_VALUES_BIS"
+                )
+            )
+            or (
+                (
+                    A2.AUTH_VALUES_VON      =       A1.VON_LEFT_OF_STAR
+                )
+            )
+    union
+
+        	/*This select in the UNION produces a list of matches where the VON value in UST12 contains a wildcard value “*”
+         	and where the BIS value for UST12 is null removing any ranges from the list of matches.  The Where clause then checks
+         	and returns matches where the AUTH_VALUES_VON value in SCAN1_AUTH_P00_ACT_AUTH_CONVERT is like VON_WILD_CARD (the converted VON field) 
+         	in SCAN1_AUTH_P00_UST12_CONVERT_P03 producing all fuzzy matching records where a wildcard is used in UST12.
+
+         	The where clause also checks if the VON value in UST12 is equal to “*” returning all matches that occur due to the VON value in UST12 
+         	being listed as “*” */
+
+        select from SCAN1_AUTH_P00_UST12_CONVERT_P03 as A1
+        join (
+                    SCAN1_AUTH_P00_ACT_AUTH_CONVERT as A2
+        )                                                  on
+                A1.FIELD = A2.AUTH_FIELD
+            and A1.OBJCT = A2.OBJECT
+        {
+            A1.OBJCT,
+            A1.AUTH,
+            A1.FIELD,
+            A1.VON,
+            A1.VON_LEFT_OF_STAR,
+            A1.VON_WILD_CARD,
+            A1.BIS,
+            A1.BIS_LEFT_OF_STAR,
+            A2.ACT_ID,
+            A2.GROUP_NUMBER,
+            A2.OBJECT,
+            A2.AUTH_FIELD,
+            A2.AUTH_VALUES_VON,
+            A2.AUTH_VALUES_VON_WILD_CARD,
+            A2.AUTH_VALUES_BIS,
+            A2."LOGIC_OPERATOR"
+        }
+        where
+            (
+                    A1.VON             like '%*%'
+                and A1.BIS             is   null
+                and A2.AUTH_VALUES_VON like A1.VON_WILD_CARD
+            )
+            or (
+                    A1.VON             =    '*'
+            )
+    union
+
+        	/*This select in the UNION produces a list of matches where the VON value in ACT_AUTH contains a wildcard value “*”
+          	and where the BIS value for ACT_AUTH is null removing any ranges from the list of matches.  The Where clause then checks
+          	and returns matches where the VON_LEFT_OF_STAR value in SCAN1_AUTH_P00_UST12_CONVERT_P03 is like AUTH_VALUES_VON_WILD_CARD 
+          	(the converted VON field) in SCAN1_AUTH_P00_ACT_AUTH_CONVERT producing all fuzzy matching records where a wildcard is used in ACT_AUTH.
+
+          	The where clause also checks if the VON value in ACT_AUTH is equal to “*” returning all matches that occur due to the VON value in ACT_AUTH 
+          	being listed as “*” */
+
+
+        select from SCAN1_AUTH_P00_ACT_AUTH_CONVERT as A2
+        join (
+                    SCAN1_AUTH_P00_UST12_CONVERT_P03 as A1
+        )                                                  on
+                A2.AUTH_FIELD = A1.FIELD
+            and A2.OBJECT     = A1.OBJCT
+        {
+            A1.OBJCT,
+            A1.AUTH,
+            A1.FIELD,
+            A1.VON,
+            A1.VON_LEFT_OF_STAR,
+            A1.VON_WILD_CARD,
+            A1.BIS,
+            A1.BIS_LEFT_OF_STAR,
+            A2.ACT_ID,
+            A2.GROUP_NUMBER,
+            A2.OBJECT,
+            A2.AUTH_FIELD,
+            A2.AUTH_VALUES_VON,
+            A2.AUTH_VALUES_VON_WILD_CARD,
+            A2.AUTH_VALUES_BIS,
+            A2."LOGIC_OPERATOR"
+        }
+        where
+            (
+                    A2.AUTH_VALUES_VON  like '%*%'
+                and A2.AUTH_VALUES_BIS  is   null
+                and A1.VON_LEFT_OF_STAR like A2.AUTH_VALUES_VON_WILD_CARD
+            )
+            or (
+                    A2.AUTH_VALUES_VON  =    '*'
+            );
+
+    //------------------------------------------------------------------------------------------------------
+
+		/*View produces a list of ACT_AUTH values where the values have been grouped by ACT_ID, GROUP_NUMBER, OBJECT,
+ 		AUTH_FIELD and AUTH_VALUES_VON to produce a unique list of values and provide a count of VON values in ACT_AUTH.
+ 		The where clause then limits the records to only those records that have a local operator of AND and are set to active.
+
+ 		This view is required as the count field produces the field COUNT_OF_AUTH_VALUES which provides a value to compare the AUTH matches to.
+ 		This same count process is applied to the records produced from SCAN1_AUTH_P01_ALL_MATCHES which then produces a COUNT_OF_AUTH_VALUES field for each AUTH.
+ 		These tables are then joined on COUNT_OF_AUTH_VALUES, AUTH_FIELD, OBJECT, GROUP_NUMBER and ACT_ID to produce a list of matches where the
+ 		correct number of values are true for an AUTH. This caters for the AND logical operator matches at a value level.*/
+
+    view SCAN1_AUTH_P02_AUTH_AND_VALUE_COUNT as
+        select from ACT_AUTH as A2
+        {
+            A2.ACT_ID,
+            A2.GROUP_NUMBER,
+            A2.OBJECT,
+            A2.AUTH_FIELD,
+            count(A2.AUTH_VALUES_VON) as COUNT_OF_AUTH_VALUES,
+            A2.LOGIC_OPERATOR,
+            A2.ACTIVE
+        }
+        group by
+            A2.ACT_ID,
+            A2.GROUP_NUMBER,
+            A2.OBJECT,
+            A2.AUTH_FIELD,
+            A2.LOGIC_OPERATOR,
+            A2.ACTIVE
+        having
+            (
+                (
+                    (A2.LOGIC_OPERATOR) = '1'
+                )
+                and (
+                    (A2.ACTIVE)         = true
+                )
+            );
+
+    //------------------------------------------------------------------------------------------------------
+		/*View produces a list of SCAN1_AUTH_P01_ALL_MATCHES values where the values have been grouped by OBJCT, AUTH,
+ 		FIELD, VON, BIS, ACT_ID, GROUP_NUMBER, OBJECT, AUTH_FIELD and LOGIC_OPERATOR to produce a unique list of
+ 		values and provide a count of values matches in SCAN1_AUTH_P01_ALL_MATCHES.  The where clause then limits the records
+ 		to only those records set to active.
+
+ 		This view is required as the count field produces the field COUNT_OF_AUTH_VALUES which provides a value to compare the ACT_AUTH
+ 		matches to.  This same count process is applied to the records produced from ACT_AUTH which then produces a COUNT_OF_AUTH_VALUES
+ 		field for each AUTH.  These tables are then joined on COUNT_OF_AUTH_VALUES, AUTH_FIELD, OBJECT, GROUP_NUMBER and ACT_ID to produce
+ 		a list of matches where the correct number of values are true for an AUTH. This caters for the AND logical operator matches at a value level.*/
+
+    view SCAN1_AUTH_P03_AND_VALUE_COUNT as
+        select from SCAN1_AUTH_P01_ALL_MATCHES as P1
+        {
+            P1.OBJCT,
+            P1.AUTH,
+            P1.FIELD,
+            P1.VON,
+            P1.BIS,
+            P1.ACT_ID,
+            P1.GROUP_NUMBER,
+            P1.OBJECT,
+            P1.AUTH_FIELD,
+            count(P1.AUTH_VALUES_VON) as COUNT_OF_AUTH_VALUES,
+            P1.LOGIC_OPERATOR
+        }
+        group by
+            P1.OBJCT,
+            P1.AUTH,
+            P1.FIELD,
+            P1.VON,
+            P1.BIS,
+            P1.ACT_ID,
+            P1.GROUP_NUMBER,
+            P1.OBJECT,
+            P1.AUTH_FIELD,
+            P1.LOGIC_OPERATOR
+        having
+            (
+                (
+                    (P1.LOGIC_OPERATOR) = 1
+                )
+            );
+
+    //------------------------------------------------------------------------------------------------------
+		/*This view joins SCAN1_AUTH_P02_AUTH_AND_VALUE_COUNT and SCAN1_AUTH_P03_AND_VALUE_COUNT on COUNT_OF_AUTH_VALUES,
+ 		AUTH_FIELD, OBJECT, GROUP_NUMBER and ACT_ID.  The join on COUNT_OF_AUTH_VALUES between the two tables
+ 		ensures only AND match records are produces if they match all of the values specified in ACT_AUTH.
+ 		By producing the COUNT_OF_AUTH_VALUES in both tables it provides a commonality between the two tables to
+ 		compare and produce only true AND value matches. */
+
+    view SCAN1_AUTH_P04_AND_VALUE_TRUE as
+        select from SCAN1_AUTH_P03_AND_VALUE_COUNT as P3
+        join (
+                    SCAN1_AUTH_P02_AUTH_AND_VALUE_COUNT as P2
+        )                                                     on
+                P2.COUNT_OF_AUTH_VALUES = P3.COUNT_OF_AUTH_VALUES
+            and P2.AUTH_FIELD           = P3.AUTH_FIELD
+            and P2.OBJECT               = P3.OBJECT
+            and P2.GROUP_NUMBER         = P3.GROUP_NUMBER
+            and P2.ACT_ID               = P3.ACT_ID
+        {
+            P3.OBJCT,
+            P3.AUTH,
+            P3.FIELD,
+            P3.VON,
+            P3.BIS,
+            P3.ACT_ID,
+            P3.GROUP_NUMBER,
+            P3.OBJECT,
+            P3.AUTH_FIELD,
+            P2.COUNT_OF_AUTH_VALUES,
+            P3.LOGIC_OPERATOR
+        };
+
+    //------------------------------------------------------------------------------------------------------
+		/*This view produces all value matches where the logical operator is OR.  This is any record in
+     	SCAN1_AUTH_P01_ALL_MATCHES where the logical operator is 2.*/
+
+    view SCAN1_AUTH_P05_OR_VALUE_TRUE as
+        select from SCAN1_AUTH_P01_ALL_MATCHES as P1
+        {
+            P1.OBJCT,
+            P1.AUTH,
+            P1.FIELD,
+            P1.VON,
+            P1.BIS,
+            P1.ACT_ID,
+            P1.GROUP_NUMBER,
+            P1.OBJECT,
+            P1.AUTH_FIELD,
+            P1.AUTH_VALUES_VON,
+            P1.AUTH_VALUES_BIS,
+            P1.LOGIC_OPERATOR
+        }
+        where
+            (
+                (
+                    (P1.LOGIC_OPERATOR) = '2'
+                )
+            );
+
+    //------------------------------------------------------------------------------------------------------
+		/*This view is a UNION of SCAN1_AUTH_P04_AND_VALUE_TRUE and SCAN1_AUTH_P05_OR_VALUE_TRUE to produce a full list of value matches.*/
+
+    view SCAN1_AUTH_P06_UNION_VALUE_TRUE as
+        select from SCAN1_AUTH_P03_AND_VALUE_COUNT as P3
+        join (
+                    SCAN1_AUTH_P02_AUTH_AND_VALUE_COUNT as P2
+        )                                                     on
+                P2.COUNT_OF_AUTH_VALUES = P3.COUNT_OF_AUTH_VALUES
+            and P2.AUTH_FIELD           = P3.AUTH_FIELD
+            and P2.OBJECT               = P3.OBJECT
+            and P2.GROUP_NUMBER         = P3.GROUP_NUMBER
+            and P2.ACT_ID               = P3.ACT_ID
+        {
+            P3.OBJCT,
+            P3.AUTH,
+            P3.FIELD,
+            P3.VON,
+            P3.BIS,
+            P3.ACT_ID,
+            P3.GROUP_NUMBER,
+            P3.OBJECT,
+            P3.AUTH_FIELD,
+            P3.LOGIC_OPERATOR
+        }
+    union
+        select from SCAN1_AUTH_P01_ALL_MATCHES as P1
+        {
+            P1.OBJCT,
+            P1.AUTH,
+            P1.FIELD,
+            P1.VON,
+            P1.BIS,
+            P1.ACT_ID,
+            P1.GROUP_NUMBER,
+            P1.OBJECT,
+            P1.AUTH_FIELD,
+            P1.LOGIC_OPERATOR
+        }
+        where
+            (
+                (
+                    (P1.LOGIC_OPERATOR) = '2'
+                )
+            );
+
+    //------------------------------------------------------------------------------------------------------
+		/*This view produces a list of distinct AUTH_FIELD values from ACT_AUTH to then perform a count on the AUTH_FIELD field.*/
+
+    view SCAN1_AUTH_P07_AUTH_FIELD as
+        select from ACT_AUTH distinct
+        {
+            ACT_AUTH.ACT_ID,
+            ACT_AUTH.GROUP_NUMBER,
+            ACT_AUTH.OBJECT,
+            ACT_AUTH.AUTH_FIELD,
+            ACT_AUTH.LOGIC_OPERATOR,
+            ACT_AUTH.ACTIVE
+        }
+        where
+            (
+                (
+                    (ACT_AUTH.ACTIVE) = true
+                )
+            );
+
+    //------------------------------------------------------------------------------------------------------
+		/*This view performs a count on AUTH_FIELD from the unique list of AUTH_FIELD values produces in SCAN1_AUTH_P07_AUTH_FIELD.
+ 	
+ 		This view is required as the count field produces the field COUNT_OF_AUTH_FIELD which provides a value to compare the AUTH matches to.
+ 		The same count process is applied to the records produced from SCAN1_AUTH_P09_MATCH_FIELD which also produces COUNT_OF_AUTH_FIELD for
+ 		each AUTH value match. These two tables are then joined on COUNT_OF_AUTH_FIELD, OBJECT, GROUP_NUMBER and ACT_ID to produce a list of
+ 		matches were the correct number of fields are true for an AUTH.  This caters for matches that may occur due to there being multiple field
+ 		within the authorisation object.*/
+
+
+    view SCAN1_AUTH_P08_AUTH_FIELD_COUNT as
+        select from SCAN1_AUTH_P07_AUTH_FIELD as P7
+        {
+            P7.ACT_ID,
+            P7.GROUP_NUMBER,
+            P7.OBJECT,
+            count(P7.AUTH_FIELD) as COUNT_OF_AUTH_FIELD,
+            P7.ACTIVE
+        }
+        group by
+            P7.ACT_ID,
+            P7.GROUP_NUMBER,
+            P7.OBJECT,
+            P7.ACTIVE;
+
+    //------------------------------------------------------------------------------------------------------
+		/*This view produces a list of distinct AUTH_FIELD values from SCAN_P06_UNION_VALUE_TRUE to then perform a count on the AUTH_FIELD field.*/
+
+
+    view SCAN1_AUTH_P09_MATCH_FIELD as
+        select from SCAN1_AUTH_P06_UNION_VALUE_TRUE distinct
+        {
+            OBJCT,
+            AUTH,
+            FIELD,
+            ACT_ID,
+            GROUP_NUMBER,
+            OBJECT,
+            AUTH_FIELD
+        };
+
+    //------------------------------------------------------------------------------------------------------
+		/*This view performs a count on AUTH_FIELD from the unique list of AUTH_FIELD values produces in SCAN1_AUTH_P09_MATCH_FIELD.
+ 	
+ 		This view is required as the count field produces the field COUNT_OF_AUTH_FIELD which provides a value to compare the AUTH matches to.
+ 		The same count process is applied to the records produced from SCAN1_AUTH_P07_AUTH_FIELD which also produces COUNT_OF_AUTH_FIELD for
+ 		each AUTH value match. These two tables are then joined on COUNT_OF_AUTH_FIELD, OBJECT, GROUP_NUMBER and ACT_ID to produce a list of
+ 		matches were the correct number of fields are true for an AUTH.  This caters for matches that may occur due to there being multiple field
+ 		within the authorisation object.*/
+
+    view SCAN1_AUTH_P10_MATCH_FIELD_COUNT as
+        select from SCAN1_AUTH_P09_MATCH_FIELD as P9
+        {
+            P9.OBJCT,
+            P9.AUTH,
+            P9.ACT_ID,
+            P9.GROUP_NUMBER,
+            P9.OBJECT,
+            count(P9.AUTH_FIELD) as COUNT_OF_AUTH_FIELD
+        }
+        group by
+            P9.OBJCT,
+            P9.AUTH,
+            P9.ACT_ID,
+            P9.GROUP_NUMBER,
+            P9.OBJECT;
+
+    //------------------------------------------------------------------------------------------------------
+		/*This view joins SCAN1_AUTH_P08_AUTH_FIELD_COUNT and SCAN1_AUTH_P10_MATCH_FIELD_COUNT on COUNT_OF_AUTH_FIELD,
+ 		OBJECT, GROUP_NUMBER and ACT_ID.  The join on COUNT_OF_AUTH_FIELD between the two tables
+ 		ensures only matches are made where all fields in the activity occur in the auth.
+ 		By producing the COUNT_OF_AUTH_FIELD in both tables it provides a commonality between the two tables to
+ 		compare and produce only true FIELD matches. */
+
+    view SCAN1_AUTH_P11_MATCH_FIELD_TRUE as
+        select from SCAN1_AUTH_P10_MATCH_FIELD_COUNT as P10
+        join (
+                    SCAN1_AUTH_P08_AUTH_FIELD_COUNT as P8
+        )                                                   on
+                P8.COUNT_OF_AUTH_FIELD = P10.COUNT_OF_AUTH_FIELD
+            and P8.OBJECT              = P10.OBJECT
+            and P8.GROUP_NUMBER        = P10.GROUP_NUMBER
+            and P8.ACT_ID              = P10.ACT_ID
+        {
+            P10.OBJCT,
+            P10.AUTH,
+            P10.ACT_ID,
+            P10.GROUP_NUMBER,
+            P10.OBJECT,
+            P10.COUNT_OF_AUTH_FIELD
+        };
+
+    //------------------------------------------------------------------------------------------------------
+
+    view SCAN1_AUTH_P12_FULL as            
+        select from SCAN1_AUTH_P01_ALL_MATCHES as P1
+        join (
+                    SCAN1_AUTH_P06_UNION_VALUE_TRUE as P6
+        )                                                   on
+            P1.OBJCT = P6.OBJCT
+            and P1.AUTH = P6.AUTH
+            and P1.ACT_ID = P6.ACT_ID
+            and P1.GROUP_NUMBER = P6.GROUP_NUMBER
+        join (
+        		SCAN1_AUTH_P11_MATCH_FIELD_TRUE as P11
+    	)
+    	on
+    		P6.OBJCT = P11.OBJCT
+            and P6.AUTH = P11.AUTH
+            and P6.ACT_ID = P11.ACT_ID
+            and P6.GROUP_NUMBER = P11.GROUP_NUMBER
+        distinct {
+            P1.OBJCT,
+            P1.AUTH,
+            P1.FIELD,
+            P1.VON,
+            P1.VON_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
+            P1."VON_WILD_CARD",//This is the converted VON field for the fuzzy matching
+            P1.BIS,
+            P1.BIS_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
+            P1.ACT_ID,
+            P1.GROUP_NUMBER,
+            P1.OBJECT,
+            P1.AUTH_FIELD,
+            P1.AUTH_VALUES_VON,
+            P1."AUTH_VALUES_VON_WILD_CARD", //This is the converted VON field for the fuzzy matching
+            P1.AUTH_VALUES_BIS,
+            P1.LOGIC_OPERATOR
+        };
+
+
+    //------------------------------------------------------------------------------------------------------
+
+    //SCAN AUTH TO PROFILE-------------------------------------------------------------------------------------------------------------------------------------------------
+
+    //------------------------------------------------------------------------------------------------------
+    
+    view SCAN1_AUTH_P13_SINGLE_PROF as 
+    select from SCAN1_AUTH_P12_FULL as P12
+    join (
+    		UST10S as UST10S
+	) on
+	P12.OBJCT = UST10S.OBJCT
+	and P12.AUTH = UST10S.AUTH
+	
+	distinct{
+	        UST10S.PROFN,
+	        P12.OBJCT,
+            P12.AUTH,
+            P12.FIELD,
+            P12.VON,
+            P12.VON_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
+            P12.VON_WILD_CARD,//This is the converted VON field for the fuzzy matching
+            P12.BIS,
+            P12.BIS_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
+            P12.ACT_ID,
+            P12.GROUP_NUMBER,
+            P12.OBJECT,
+            P12.AUTH_FIELD,
+            P12.AUTH_VALUES_VON,
+            P12.AUTH_VALUES_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
+            P12.AUTH_VALUES_BIS,
+            P12.LOGIC_OPERATOR
+	};
+
+    //------------------------------------------------------------------------------------------------------
+
+    view SCAN1_AUTH_P14_COMP_PROF as 
+    select from SCAN1_AUTH_P13_SINGLE_PROF as P13
+    left outer join (
+    		UST10C as UST10C
+	) on
+	P13.PROFN = UST10C.SUBPROF
+	distinct{
+			UST10C.PROFN "COMP_PROFN",
+			P13.PROFN "SINGLE_PROFN",
+	        P13.OBJCT,
+            P13.AUTH,
+            P13.FIELD,
+            P13.VON,
+            P13.VON_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
+            P13.VON_WILD_CARD,//This is the converted VON field for the fuzzy matching
+            P13.BIS,
+            P13.BIS_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
+            P13.ACT_ID,
+            P13.GROUP_NUMBER,
+            P13.OBJECT,
+            P13.AUTH_FIELD,
+            P13.AUTH_VALUES_VON,
+            P13.AUTH_VALUES_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
+            P13.AUTH_VALUES_BIS,
+            P13.LOGIC_OPERATOR
+	};
+    
+    //------------------------------------------------------------------------------------------------------
+    
+    view SCAN1_AUTH_P15_USERS as 
+    select from SCAN1_AUTH_P14_COMP_PROF as P14
+    join (
+    		USR10 as USR10
+	) on
+	P14.SINGLE_PROFN = USR10.PROFN
+	distinct{
+			USR10.MODBE,
+			P14.COMP_PROFN,
+			P14.SINGLE_PROFN,
+	        P14.OBJCT,
+            P14.AUTH,
+            P14.FIELD,
+            P14.VON,
+            P14.VON_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
+            P14.VON_WILD_CARD,//This is the converted VON field for the fuzzy matching
+            P14.BIS,
+            P14.BIS_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
+            P14.ACT_ID,
+            P14.GROUP_NUMBER,
+            P14.OBJECT,
+            P14.AUTH_FIELD,
+            P14.AUTH_VALUES_VON,
+            P14.AUTH_VALUES_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
+            P14.AUTH_VALUES_BIS,
+            P14.LOGIC_OPERATOR
+	}
+
+UNION
+
+    select from SCAN1_AUTH_P14_COMP_PROF as P14
+    join (
+    		USR10 as USR10
+	) on
+	P14.COMP_PROFN = USR10.PROFN
+	distinct{
+			USR10.MODBE,
+			P14.COMP_PROFN,
+			P14.SINGLE_PROFN,
+	        P14.OBJCT,
+            P14.AUTH,
+            P14.FIELD,
+            P14.VON,
+            P14.VON_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
+            P14.VON_WILD_CARD,//This is the converted VON field for the fuzzy matching
+            P14.BIS,
+            P14.BIS_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
+            P14.ACT_ID,
+            P14.GROUP_NUMBER,
+            P14.OBJECT,
+            P14.AUTH_FIELD,
+            P14.AUTH_VALUES_VON,
+            P14.AUTH_VALUES_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
+            P14.AUTH_VALUES_BIS,
+            P14.LOGIC_OPERATOR
+	};
+
+    //------------------------------------------------------------------------------------------------------
+
+
+    //SCAN TCODE----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+    //SCAN TCODE PREP---------------------------------------------------------------------------------------
+		/*View to add an extra VON column into UST12 which displays only those values listed left of
+    	the first * found the VON string.  The * is included as well.
+    		
+    	This is required to cater for those older versions of SAP which allowed invalid combinations of
+    	wild cards that would cause issues with the fuzzy matching logic.*/
+
+    view SCAN1_TCODE_P00_UST12_CONVERT_P01 as
+        select from UST12 as A1
+        {
+            A1.OBJCT,
+            A1.AUTH,
+            A1.FIELD,
+            A1.VON,
+            left("VON", (locate("VON", '*'))) "VON_LEFT_OF_STAR",
+            A1.BIS
+        }
+        where
+                OBJCT =    'S_TCODE'
+            and VON   like '%*%'
+    union
+        select from UST12 as A1
+        {
+            A1.OBJCT,
+            A1.AUTH,
+            A1.FIELD,
+            A1.VON,
+            A1.VON "VON_LEFT_OF_STAR",
+            A1.BIS
+        }
+        where
+                OBJCT =        'S_TCODE'
+            and VON   not like '%*%';
+
+    //------------------------------------------------------------------------------------------------------
+		/*View to add an extra BIS column into UST12 which displays only those values listed left of
+    	the first * found the BIS string.  The * is included as well.
+    		
+    	This is required to cater for those older versions of SAP which allowed invalid combinations of
+    	wild cards that would cause issues with the fuzzy matching logic.*/
+
+    view SCAN1_TCODE_P00_UST12_CONVERT_P02 as
+        select from SCAN1_TCODE_P00_UST12_CONVERT_P01 as A1
+        {
+            A1.OBJCT,
+            A1.AUTH,
+            A1.FIELD,
+            A1.VON,
+            A1.VON_LEFT_OF_STAR,
+            A1.BIS,
+            left("BIS", (locate("BIS", '*'))) "BIS_LEFT_OF_STAR"
+        }
+        where
+            BIS like '%*%'
+    union
+        select from SCAN1_TCODE_P00_UST12_CONVERT_P01 as A1
+        {
+            A1.OBJCT,
+            A1.AUTH,
+            A1.FIELD,
+            A1.VON,
+            A1.VON_LEFT_OF_STAR,
+            A1.BIS,
+            A1.BIS "BIS_LEFT_OF_STAR"
+        }
+        where
+               BIS not like '%*%'
+            or BIS is       null;
+
+    //-------------------------------------------------------------------
+		/*View to add an extra VON column into UST12 where all * values have been replaces with a % */
+		/*This is required to make the fuzzy matching logic to work*/
+
+    view SCAN1_TCODE_P00_UST12_CONVERT_P03 as
+        select from SCAN1_TCODE_P00_UST12_CONVERT_P02 as A1
+        {
+            A1.OBJCT,
+            A1.AUTH,
+            A1.FIELD,
+            A1.VON,
+            A1.VON_LEFT_OF_STAR,
+            replace("VON_LEFT_OF_STAR", '*', '%') "VON_WILD_CARD",
+            A1.BIS,
+            A1.BIS_LEFT_OF_STAR
+        };
+
+    //------------------------------------------------------------------------------------------------------
+		/*View to add an extra TCODE_VON column into ACT_TCODE where all * values have been replaces with a %
+		This is required to make the fuzzy matching logic to work*/
+		
+    view SCAN1_TCODE_P00_ACT_TCODE_CONVERT as
+        select from ACT_TCODE as A2
+        {
+            A2.ACT_ID,
+            A2.ACTIVE,
+            'S_TCODE' "TCODE_OBJCT",
+            A2.TCODE_VON,
+            replace("TCODE_VON", '*', '%') "TCODE_VON_WILD_CARD",
+            A2.TCODE_BIS,
+            A2.GROUP_NUMBER
+        }
+        where
+            ACTIVE = true;
+
+    //------------------------------------------------------------------------------------------------------
+
+    //SCAN TCODE SCAN-------------------------------------------------------------------------------------------------------------------------------------------------
+
+    //------------------------------------------------------------------------------------------------------
+
+		/*View produces a list of matches between a record in SCAN1_TCODE_P00_ACT_AUTH_CONVERT and SCAN1_TCODE_P00_UST12_CONVERT_P03. */
+
+		/*SCAN1_TCODE_P00_UST12_CONVERT_P03 and SCAN1_TCODE_P00_ACT_AUTH_CONVERT are joined on FIELD in SCAN1_TCODE_P00_UST12_CONVERT_P03 
+		and FIELD in ACT_AUTH as well as OBJCT in UST12 and OBJECT in SCAN1_TCODE_P00_ACT_AUTH_CONVERT.  Different where clauses are then used
+ 		in each select in the UNION to produce different types of matches required*/
+
+		/*This is a UNION that combines 3 different queries*/
+
+		/*This select in the UNION produces all matches that occur from a range values and direct matches.
+ 		The where clause takes the TCODE_VON value from SCAN1_TCODE_P00_ACT_AUTH_CONVERT and checks 
+ 		if it between VON_LEFT_OF_STAR and BIS_LEFT_OF_STAR in SCAN1_TCODE_P00_UST12_CONVERT_P03 or,
+ 		if the VON_LEFT_OF_STAR value from SCAN1_TCODE_P00_UST12_CONVERT_P03 is between TCODE_VON and 
+ 		AUTH_VALUES_BIS in SCAN1_TCODE_P00_ACT_AUTH_CONVERT this produces all range matches.
+ 		The where clause also checks if TCODE_VON in SCAN1_TCODE_P00_ACT_AUTH_CONVERT is equal to 
+ 		VON_LEFT_OF_STAR is SCAN1_TCODE_P00_UST12_CONVERT_P03 producing all the direct value matches.*/
+
+    view SCAN1_TCODE_P01_ALL_MATCHES as
+        select from SCAN1_TCODE_P00_UST12_CONVERT_P03 as A1
+        join (
+                    SCAN1_TCODE_P00_ACT_TCODE_CONVERT as A2
+        )                                                   on
+            A1.OBJCT = A2.TCODE_OBJCT
+        distinct {
+            A1.OBJCT,
+            A1.AUTH,
+            A1.FIELD,
+            A1.VON,
+            A1.VON_LEFT_OF_STAR,
+            A1."VON_WILD_CARD",
+            A1.BIS,
+            A1.BIS_LEFT_OF_STAR,
+            A2.ACT_ID,
+            A2.TCODE_OBJCT,
+            A2.TCODE_VON,
+            A2.TCODE_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
+            A2.TCODE_BIS,
+            A2.GROUP_NUMBER
+        }
+        where
+            (
+                (
+                    (A2."TCODE_VON")        between A1."VON_LEFT_OF_STAR" and A1."BIS_LEFT_OF_STAR"
+                )
+            )
+            or (
+                (
+                    (A1."VON_LEFT_OF_STAR") between A2."TCODE_VON" and A2."TCODE_BIS"
+                )
+            )
+            or (
+                (
+                    A2.TCODE_VON            =       A1.VON_LEFT_OF_STAR
+                )
+            )
+    union
+
+        	/*This select in the UNION produces a list of matches where the VON value in UST12 contains a wildcard value “*”
+         	and where the BIS value for UST12 is null removing any ranges from the list of matches.  The Where clause then checks
+         	and returns matches where the TCODE_VON value in SCAN1_TCODE_P00_ACT_TCODE_CONVERT is like VON_WILD_CARD (the converted VON field) 
+         	in SCAN1_TCODE_P00_ACT_TCODE_CONVERT producing all fuzzy matching records where a wildcard is used in UST12.
+
+         	The where clause also checks if the VON value in UST12 is equal to “*” returning all matches that occur due to the VON value in UST12 
+         	being listed as “*” */
+
+        select from SCAN1_TCODE_P00_UST12_CONVERT_P03 as A1
+        join (
+                    SCAN1_TCODE_P00_ACT_TCODE_CONVERT as A2
+        )                                                   on
+            A1.OBJCT = A2.TCODE_OBJCT
+       distinct {
+            A1.OBJCT,
+            A1.AUTH,
+            A1.FIELD,
+            A1.VON,
+            A1.VON_LEFT_OF_STAR,
+            A1.VON_WILD_CARD,
+            A1.BIS,
+            A1.BIS_LEFT_OF_STAR,
+            A2.ACT_ID,
+            A2.TCODE_OBJCT,
+            A2.TCODE_VON,
+            A2.TCODE_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
+            A2.TCODE_BIS,
+            A2.GROUP_NUMBER
+        }
+        where
+            (
+                    A1.VON       like '%*%'
+                and A1.BIS       is   null
+                and A2.TCODE_VON like A1.VON_WILD_CARD
+            )
+            or (
+                    A1.VON       =    '*'
+            )
+    union
+
+        /*This select in the UNION produces a list of matches where the VON value in ACT_AUTH contains a wildcard value “*”
+          	and where the BIS value for ACT_AUTH is null removing any ranges from the list of matches.  The Where clause then checks
+          	and returns matches where the VON value in UST12 is like VON% (the converted VON field) in ACT_AUTH producing all fuzzy matching
+          	records where a wildcard is used in ACT_AUTH.
+
+          	The where clause also checks if the VON value in ACT_AUTH is equal to “*” returning all matches that occur due to the VON value in ACT_AUTH being listed as “*” */
+
+        	/*This select in the UNION produces a list of matches where the VON value in ACT_TCODE contains a wildcard value “*”
+          	and where the TCODE_BIS value for ACT_TCODE is null removing any ranges from the list of matches.  The Where clause then checks
+          	and returns matches where the VON_LEFT_OF_STAR value in SCAN1_TCODE_P00_UST12_CONVERT_P03 is like TCODE_VON_WILD_CARD 
+          	(the converted VON field) in SCAN1_TCODE_P00_ACT_TCODE_CONVERT producing all fuzzy matching records where a wildcard is used in ACT_TCODE.
+
+          	The where clause also checks if the VON value in ACT_TCODE is equal to “*” returning all matches that occur due to the VON value in ACT_TCODE 
+          	being listed as “*” */
+
+
+        select from SCAN1_TCODE_P00_ACT_TCODE_CONVERT as A2
+        join (
+                    SCAN1_TCODE_P00_UST12_CONVERT_P03 as A1
+        )                                                   on
+            A2.TCODE_OBJCT = A1.OBJCT
+       distinct {
+            A1.OBJCT,
+            A1.AUTH,
+            A1.FIELD,
+            A1.VON,
+            A1.VON_LEFT_OF_STAR,
+            A1.VON_WILD_CARD,
+            A1.BIS,
+            A1.BIS_LEFT_OF_STAR,
+            A2.ACT_ID,
+            A2.TCODE_OBJCT,
+            A2.TCODE_VON,
+            A2.TCODE_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
+            A2.TCODE_BIS,
+            A2.GROUP_NUMBER
+        }
+        where
+            (
+                    A2.TCODE_VON        like '%*%'
+                and A2.TCODE_BIS        is   null
+                and A1.VON_LEFT_OF_STAR like A2.TCODE_VON_WILD_CARD
+            )
+            or (
+                    A2.TCODE_VON        =    '*'
+            );
+
+    //------------------------------------------------------------------------------------------------------
+
+    //SCAN TCODE TO PROFILE-------------------------------------------------------------------------------------------------------------------------------------------------
+
+    //------------------------------------------------------------------------------------------------------
+    
+    view SCAN1_TCODE_P02_SINGLE_PROF as 
+    select from SCAN1_TCODE_P01_ALL_MATCHES as P1
+    join (
+    		UST10S as UST10S
+	) on
+	P1.OBJCT = UST10S.OBJCT
+	and P1.AUTH = UST10S.AUTH
+	
+	distinct{
+	        UST10S.PROFN,
+            P1.OBJCT,
+            P1.AUTH,
+            P1.FIELD,
+            P1.VON,
+            P1.VON_LEFT_OF_STAR,
+            P1.VON_WILD_CARD,
+            P1.BIS,
+            P1.BIS_LEFT_OF_STAR,
+            P1.ACT_ID,
+            P1.TCODE_OBJCT,
+            P1.TCODE_VON,
+            P1.TCODE_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
+            P1.TCODE_BIS,
+            P1.GROUP_NUMBER
+	};
+
+    //------------------------------------------------------------------------------------------------------
+
+    view SCAN1_TCODE_P03_COMP_PROF as 
+    select from SCAN1_TCODE_P02_SINGLE_PROF as P2
+    left outer join (
+    		UST10C as UST10C
+	) on
+	P2.PROFN = UST10C.SUBPROF
+	distinct{
+			UST10C.PROFN "COMP_PROFN",
+			P2.PROFN "SINGLE_PROFN",
+            P2.OBJCT,
+            P2.AUTH,
+            P2.FIELD,
+            P2.VON,
+            P2.VON_LEFT_OF_STAR,
+            P2.VON_WILD_CARD,
+            P2.BIS,
+            P2.BIS_LEFT_OF_STAR,
+            P2.ACT_ID,
+            P2.TCODE_OBJCT,
+            P2.TCODE_VON,
+            P2.TCODE_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
+            P2.TCODE_BIS,
+            P2.GROUP_NUMBER
+	};
+
+    //------------------------------------------------------------------------------------------------------
+
+view SCAN1_TCODE_P04_USERS as 
+    select from SCAN1_TCODE_P03_COMP_PROF as P3
+    join (
+    		USR10 as USR10
+	) on
+	P3.SINGLE_PROFN = USR10.PROFN
+	distinct{
+			USR10.MODBE,
+			P3.COMP_PROFN,
+			P3.SINGLE_PROFN,
+            P3.OBJCT,
+            P3.AUTH,
+            P3.FIELD,
+            P3.VON,
+            P3.VON_LEFT_OF_STAR,
+            P3.VON_WILD_CARD,
+            P3.BIS,
+            P3.BIS_LEFT_OF_STAR,
+            P3.ACT_ID,
+            P3.TCODE_OBJCT,
+            P3.TCODE_VON,
+            P3.TCODE_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
+            P3.TCODE_BIS,
+            P3.GROUP_NUMBER
+	}
+
+UNION
+
+    select from SCAN1_TCODE_P03_COMP_PROF as P3
+    join (
+    		USR10 as USR10
+	) on
+	P3.COMP_PROFN = USR10.PROFN
+	distinct{
+			USR10.MODBE,
+			P3.COMP_PROFN,
+			P3.SINGLE_PROFN,
+            P3.OBJCT,
+            P3.AUTH,
+            P3.FIELD,
+            P3.VON,
+            P3.VON_LEFT_OF_STAR,
+            P3.VON_WILD_CARD,
+            P3.BIS,
+            P3.BIS_LEFT_OF_STAR,
+            P3.ACT_ID,
+            P3.TCODE_OBJCT,
+            P3.TCODE_VON,
+            P3.TCODE_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
+            P3.TCODE_BIS,
+            P3.GROUP_NUMBER
+	};
+
+    //------------------------------------------------------------------------------------------------------
+
+    //SCAN 2 PREP-------------------------------------------------------------------------------------------------------------------------------------------------
+
+    //------------------------------------------------------------------------------------------------------
+view SCAN2_ACT_ALL as
+	select from ACT_AUTH as ACT_AUTH
+		distinct{
+		ACT_ID,
+		GROUP_NUMBER
+		}
+	
+	UNION
+	
+	select from ACT_TCODE as ACT_TCODE
+		distinct{
+		ACT_ID,
+		GROUP_NUMBER
+		}
+	ORDER BY ACT_ID, GROUP_NUMBER;
+
+    //------------------------------------------------------------------------------------------------------
+
+    //SCAN 2 USERS-------------------------------------------------------------------------------------------------------------------------------------------------
+
+    //------------------------------------------------------------------------------------------------------
+
+view SCAN2_USER_P01_AUTH as 
+    select from SCAN1_AUTH_P15_USERS as P15
+	distinct{
+			P15.MODBE,
+            P15.ACT_ID,
+            P15.GROUP_NUMBER
+	};
+
+    //------------------------------------------------------------------------------------------------------
+
+view SCAN2_USER_P02_TCODE as 
+    select from SCAN1_TCODE_P04_USERS as P4
+	distinct{
+			P4.MODBE,
+            P4.ACT_ID,
+            P4.GROUP_NUMBER
+	};
+
+    //------------------------------------------------------------------------------------------------------
+
+view SCAN2_USER_P03_USER_ACT as 
+    select from SCAN2_ACT_ALL as ACT_ALL
+    
+   left outer join (
+    		SCAN2_USER_P01_AUTH as P1
+	) on
+	ACT_ALL.ACT_ID = P1.ACT_ID
+	and ACT_ALL.GROUP_NUMBER = P1.GROUP_NUMBER
+	
+	left outer join (
+    		SCAN2_USER_P02_TCODE as P2
+	) on
+	ACT_ALL.ACT_ID = P2.ACT_ID
+	and ACT_ALL.GROUP_NUMBER = P2.GROUP_NUMBER
+	distinct{
+		ACT_ALL.ACT_ID,
+		ACT_ALL.GROUP_NUMBER,
+		P1.MODBE "AUTH_USER",
+        P2.MODBE "TCODE_USER"
+	}
+	
+	where P1.MODBE = P2.MODBE;
+
+    //------------------------------------------------------------------------------------------------------
+
+    //SCAN 2 PROF-------------------------------------------------------------------------------------------------------------------------------------------------
+
+    //------------------------------------------------------------------------------------------------------
+
+view SCAN2_PROF_P01_AUTH as 
+    select from SCAN1_AUTH_P13_SINGLE_PROF as P13
+	distinct{
+			P13.PROFN "PROFN",
+            P13.ACT_ID,
+            P13.GROUP_NUMBER
+	}
+
+UNION
+
+    select from SCAN1_AUTH_P14_COMP_PROF as P14
+	distinct{
+			P14.COMP_PROFN "PROFN",
+            P14.ACT_ID,
+            P14.GROUP_NUMBER
+	};
+
+    //------------------------------------------------------------------------------------------------------
+
+view SCAN2_PROF_P02_TCODE as 
+    select from SCAN1_TCODE_P02_SINGLE_PROF as P2
+	distinct{
+			P2.PROFN "PROFN",
+            P2.ACT_ID,
+            P2.GROUP_NUMBER
+	}
+
+UNION
+
+    select from SCAN1_TCODE_P03_COMP_PROF as P3
+	distinct{
+			P3.COMP_PROFN "PROFN",
+            P3.ACT_ID,
+            P3.GROUP_NUMBER
+	};
+
+
+    //------------------------------------------------------------------------------------------------------
+
+view SCAN2_PROF_P03_PROF_ACT as 
+    select from SCAN2_ACT_ALL as ACT_ALL
+    
+   left outer join (
+    		SCAN2_PROF_P01_AUTH as P1
+	) on
+	ACT_ALL.ACT_ID = P1.ACT_ID
+	and ACT_ALL.GROUP_NUMBER = P1.GROUP_NUMBER
+	
+	left outer join (
+    		SCAN2_PROF_P02_TCODE as P2
+	) on
+	ACT_ALL.ACT_ID = P2.ACT_ID
+	and ACT_ALL.GROUP_NUMBER = P2.GROUP_NUMBER
+	distinct{
+		ACT_ALL.ACT_ID,
+		ACT_ALL.GROUP_NUMBER,
+		P1.PROFN "AUTH_PROFN",
+        P2.PROFN "TCODE_PROFN"
+	}
+	
+	where P1.PROFN = P2.PROFN;
+
+    //------------------------------------------------------------------------------------------------------
+
+    //SCAN 2 ROLE-------------------------------------------------------------------------------------------------------------------------------------------------
+
+    //------------------------------------------------------------------------------------------------------
+    
+view SCAN2_ROLE_P01_AUTH as 
+    select from SCAN2_PROF_P01_AUTH as P1
+	join (
+			AGR_1016 as AGR_1016
+		)on 
+		P1.PROFN = AGR_1016.PROFILE
+	distinct{
+			AGR_1016.AGR_NAME,
+			P1.PROFN "PROFN",
+            P1.ACT_ID,
+            P1.GROUP_NUMBER
+	};
+
+    //------------------------------------------------------------------------------------------------------
+
+view SCAN2_ROLE_P02_TCODE as 
+    select from SCAN2_PROF_P02_TCODE as P2
+	join (
+			AGR_1016 as AGR_1016
+		)on 
+		P2.PROFN = AGR_1016.PROFILE
+	distinct{
+			AGR_1016.AGR_NAME,
+			P2.PROFN,
+            P2.ACT_ID,
+            P2.GROUP_NUMBER
+	};
+
+    //------------------------------------------------------------------------------------------------------
+
+view SCAN2_ROLE_P03_PROF_ACT as 
+    select from SCAN2_ACT_ALL as ACT_ALL
+    
+   left outer join (
+    		SCAN2_ROLE_P01_AUTH as P1
+	) on
+	ACT_ALL.ACT_ID = P1.ACT_ID
+	and ACT_ALL.GROUP_NUMBER = P1.GROUP_NUMBER
+	
+	left outer join (
+    		SCAN2_ROLE_P02_TCODE as P2
+	) on
+	ACT_ALL.ACT_ID = P2.ACT_ID
+	and ACT_ALL.GROUP_NUMBER = P2.GROUP_NUMBER
+	distinct{
+		ACT_ALL.ACT_ID,
+		ACT_ALL.GROUP_NUMBER,
+		P1.AGR_NAME "AUTH_ROLE",
+        P2.AGR_NAME "TCODE_ROLE"
+	}
+	
+	where P1.AGR_NAME = P2.AGR_NAME;
+
+    //------------------------------------------------------------------------------------------------------
+
+    //-------------------------------------------------------------------------------------------------------------------------------------------------
+
+    //------------------------------------------------------------------------------------------------------    
+};
