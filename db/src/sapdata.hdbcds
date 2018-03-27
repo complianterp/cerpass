@@ -83,7 +83,7 @@ context sapdata {
 	
 
 	entity AGR_1016{
-		MANDT : String(60);
+		MANDT : String(3);
 		AGR_NAME : String(60);
 		COUNTER : String(60);
 		PROFILE : String(60);
