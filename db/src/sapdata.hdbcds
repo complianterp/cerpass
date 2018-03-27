@@ -19,7 +19,7 @@ using cerpass.db::masterdata.RISK_TEST;
 using cerpass.db::masterdata.BUSINESS_CONTROL;
 using cerpass.db::masterdata.TESTS_BUSINESS_CONTROL;
 
-
+@OData.publish : true
 context sapdata {
 
     /*@@LAYOUT{"LAYOUTINFO":{"X":1281,"Y":176.5}}*/

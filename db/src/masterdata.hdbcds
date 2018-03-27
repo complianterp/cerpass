@@ -8,6 +8,7 @@ using cerpass.db::sapdata.UST10C;
 using cerpass.db::sapdata.USR10;
 using cerpass.db::sapdata.AGR_1016;
 
+@OData.publish : true
 context masterdata {
 
     /*@@LAYOUT{"LAYOUTINFO":{"X":348,"Y":-45.5}}*/
