@@ -1,12 +1,12 @@
 namespace cerpass.db;
 
-using cerpass.db::sapdata.TSTC;
-using cerpass.db::sapdata.TOBJT;//In Use
-using cerpass.db::sapdata.UST12;
-using cerpass.db::sapdata.UST10S;
-using cerpass.db::sapdata.UST10C;
-using cerpass.db::sapdata.USR10;
-using cerpass.db::sapdata.AGR_1016;
+//using cerpass.db::sapdata.TSTC;
+//using cerpass.db::sapdata.TOBJT;//In Use
+//using cerpass.db::sapdata.UST12;
+//using cerpass.db::sapdata.UST10S;
+//using cerpass.db::sapdata.UST10C;
+//using cerpass.db::sapdata.USR10;
+//using cerpass.db::sapdata.AGR_1016;
 
 @OData.publish : true
 context masterdata {
@@ -151,7 +151,7 @@ context masterdata {
             LOGIC_OPERATOR  : Integer    not null;
             ACTIVE          : Boolean;
             TO_ACTIVITY     : association[1] to ACTIVITY on TO_ACTIVITY.ACT_ID = ACT_ID; /*IN*/
-            TO_TOBJT        : association[1] to TOBJT    on TO_TOBJT.OBJECT = OBJECT; /*IN*/
+            //TO_TOBJT        : association[1] to TOBJT    on TO_TOBJT.OBJECT = OBJECT; /*IN*/
 
     };
 

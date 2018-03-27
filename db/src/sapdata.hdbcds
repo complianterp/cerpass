@@ -1,28 +1,9 @@
 namespace cerpass.db;
 
-using cerpass.db::masterdata.MODULE;
-using cerpass.db::masterdata.SUB_MODULE;
-using cerpass.db::masterdata.PROCESSES;
-using cerpass.db::masterdata.SUB_PROCESSES;
-using cerpass.db::masterdata.CUSTOMERS;
-using cerpass.db::masterdata.LOGICAL_SYSTEMS;
-using cerpass.db::masterdata.USERS;
-using cerpass.db::masterdata.RULE_SET;
-using cerpass.db::masterdata.ACTIVITY;
-using cerpass.db::masterdata.ACT_TCODE;
-using cerpass.db::masterdata.ACT_AUTH;//In Use
-using cerpass.db::masterdata.TESTS;
-using cerpass.db::masterdata.TEST_ACTIVITY;
-using cerpass.db::masterdata.RISKS;
-using cerpass.db::masterdata.RISK_RATING;
-using cerpass.db::masterdata.RISK_TEST;
-using cerpass.db::masterdata.BUSINESS_CONTROL;
-using cerpass.db::masterdata.TESTS_BUSINESS_CONTROL;
-
 @OData.publish : true
 context sapdata {
 
-    /*@@LAYOUT{"LAYOUTINFO":{"X":1281,"Y":176.5}}*/
+/*@@LAYOUT{"LAYOUTINFO":{"X":1281,"Y":176.5}}*/
     entity TSTC {
         key TCODE : String(20) not null;
             PGMNA : String(40);
@@ -38,7 +19,7 @@ context sapdata {
             LANGU       : String(10) not null;
         key OBJECT      : String(10) not null;
             TTEXT       : String(60);
-            TO_ACT_AUTH : association[0..*] to ACT_AUTH on TO_ACT_AUTH.OBJECT = OBJECT; /*OUT*/
+            //TO_ACT_AUTH : association[0..*] to ACT_AUTH on TO_ACT_AUTH.OBJECT = OBJECT; /*OUT*/
     };
 
     /**@@LAYOUT{"LAYOUTINFO":{"X":-789,"Y":882.5}}*/
@@ -90,6 +71,7 @@ context sapdata {
 		VARIANT : String(60);
 		GENERATED : String(60);
 		PSTATE : String(60);
-	}
+	};
+
 
 };
