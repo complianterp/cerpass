@@ -23,8 +23,10 @@ using cerpass.db::sapdata.TOBJT;
 using cerpass.db::sapdata.UST12;//In Use
 using cerpass.db::sapdata.UST10S;//In Use
 using cerpass.db::sapdata.UST10C;//In Use
-using cerpass.db::sapdata.USR10;//In Use
+using cerpass.db::sapdata.USR10;
 using cerpass.db::sapdata.AGR_1016;//In Use
+using cerpass.db::sapdata.UST04;//In Use
+using cerpass.db::sapdata.AGR_AGRS;//In Use
 
 context scan {
 
@@ -584,11 +586,15 @@ context scan {
             P10.AUTH,
             P10.ACT_ID,
             P10.GROUP_NUMBER,
-            P10.OBJECT,
             P10.COUNT_OF_AUTH_FIELD
         };
 
     //------------------------------------------------------------------------------------------------------
+	/*This view joins SCAN1_AUTH_P01_ALL_MATCHES, SCAN1_AUTH_P06_UNION_VALUE_TRUE and SCAN1_AUTH_P11_MATCH_FIELD_TRUE on OBJCT, 
+	AUTH, ACT_ID and GROUP_NUMBER.  This provides the dill down detail for Auths for Scan 1 showing what values cause the matches to occur.  
+	This view uses the true field auth matches from SCAN1_AUTH_P11_MATCH_FIELD_TRUE and the true values matches from SCAN1_AUTH_P06_UNION_VALUE_TRUE 
+	to connect back to SCAN1_AUTH_P01_ALL_MATCHES which shows all the individual matching records.*/
+
 
     view SCAN1_AUTH_P12_FULL as            
         select from SCAN1_AUTH_P01_ALL_MATCHES as P1
@@ -632,125 +638,123 @@ context scan {
     //SCAN AUTH TO PROFILE-------------------------------------------------------------------------------------------------------------------------------------------------
 
     //------------------------------------------------------------------------------------------------------
-    
+	/*This view joins the true Auth matches from SCAN1_AUTH_P11_MATCH_FIELD_TRUE to the Auths corresponding Single Profile in UST10S.*/
+		
     view SCAN1_AUTH_P13_SINGLE_PROF as 
-    select from SCAN1_AUTH_P12_FULL as P12
+    select from SCAN1_AUTH_P11_MATCH_FIELD_TRUE as P11
     join (
     		UST10S as UST10S
 	) on
-	P12.OBJCT = UST10S.OBJCT
-	and P12.AUTH = UST10S.AUTH
+	P11.OBJCT = UST10S.OBJCT
+	and P11.AUTH = UST10S.AUTH
 	
 	distinct{
-	        UST10S.PROFN,
-	        P12.OBJCT,
-            P12.AUTH,
-            P12.FIELD,
-            P12.VON,
-            P12.VON_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
-            P12.VON_WILD_CARD,//This is the converted VON field for the fuzzy matching
-            P12.BIS,
-            P12.BIS_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
-            P12.ACT_ID,
-            P12.GROUP_NUMBER,
-            P12.OBJECT,
-            P12.AUTH_FIELD,
-            P12.AUTH_VALUES_VON,
-            P12.AUTH_VALUES_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
-            P12.AUTH_VALUES_BIS,
-            P12.LOGIC_OPERATOR
+	        UST10S.PROFN"SINGLE_PROFN",
+            P11.OBJCT,
+            P11.AUTH,
+            P11.ACT_ID,
+            P11.GROUP_NUMBER
 	};
 
     //------------------------------------------------------------------------------------------------------
-
+	/*This view joins the true Auth matches from SCAN1_AUTH_P11_MATCH_FIELD_TRUE to the Auths corresponding Comp Profile in UST10C.*/
+	
     view SCAN1_AUTH_P14_COMP_PROF as 
     select from SCAN1_AUTH_P13_SINGLE_PROF as P13
-    left outer join (
+    join (
     		UST10C as UST10C
 	) on
-	P13.PROFN = UST10C.SUBPROF
+	P13.SINGLE_PROFN = UST10C.SUBPROF
+	
 	distinct{
-			UST10C.PROFN "COMP_PROFN",
-			P13.PROFN "SINGLE_PROFN",
-	        P13.OBJCT,
+	        UST10C.PROFN "COMP_PROFN",
+	        P13.SINGLE_PROFN,
+            P13.OBJCT,
             P13.AUTH,
-            P13.FIELD,
-            P13.VON,
-            P13.VON_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
-            P13.VON_WILD_CARD,//This is the converted VON field for the fuzzy matching
-            P13.BIS,
-            P13.BIS_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
             P13.ACT_ID,
-            P13.GROUP_NUMBER,
-            P13.OBJECT,
-            P13.AUTH_FIELD,
-            P13.AUTH_VALUES_VON,
-            P13.AUTH_VALUES_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
-            P13.AUTH_VALUES_BIS,
-            P13.LOGIC_OPERATOR
+            P13.GROUP_NUMBER
 	};
     
     //------------------------------------------------------------------------------------------------------
-    
-    view SCAN1_AUTH_P15_USERS as 
-    select from SCAN1_AUTH_P14_COMP_PROF as P14
+   /*This view shows the User Activity Auth matches.  This is done by creating a union between SCAN1_AUTH_P13_SINGLE_PROF 
+   and SCAN1_AUTH_P14_COMP_PROF and then joining these tables  to UST04.*/
+   
+   view SCAN1_AUTH_P15_USERS as 
+    select from SCAN1_AUTH_P13_SINGLE_PROF as P13
     join (
-    		USR10 as USR10
+    		UST04 as UST04
 	) on
-	P14.SINGLE_PROFN = USR10.PROFN
+	P13.SINGLE_PROFN = UST04.PROFILE
 	distinct{
-			USR10.MODBE,
-			P14.COMP_PROFN,
-			P14.SINGLE_PROFN,
-	        P14.OBJCT,
+			UST04.BNAME,
+	        P13.SINGLE_PROFN "PROFILE",
+	        'SINGLE_PROFN' "TYPE",
+            P13.OBJCT,
+            P13.AUTH,
+            P13.ACT_ID,
+            P13.GROUP_NUMBER
+	}
+	UNION
+	
+	select from SCAN1_AUTH_P14_COMP_PROF as P14
+    join (
+    		UST04 as UST04
+	) on
+	P14.COMP_PROFN = UST04.PROFILE
+	distinct{
+			UST04.BNAME,
+	        P14.COMP_PROFN "PROFILE",
+	        'COMP_PROFN' "TYPE",
+            P14.OBJCT,
             P14.AUTH,
-            P14.FIELD,
-            P14.VON,
-            P14.VON_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
-            P14.VON_WILD_CARD,//This is the converted VON field for the fuzzy matching
-            P14.BIS,
-            P14.BIS_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
             P14.ACT_ID,
-            P14.GROUP_NUMBER,
-            P14.OBJECT,
-            P14.AUTH_FIELD,
-            P14.AUTH_VALUES_VON,
-            P14.AUTH_VALUES_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
-            P14.AUTH_VALUES_BIS,
-            P14.LOGIC_OPERATOR
+            P14.GROUP_NUMBER
+	};	
+
+    //------------------------------------------------------------------------------------------------------
+
+view SCAN1_AUTH_P16_ALL as
+	select from SCAN1_AUTH_P13_SINGLE_PROF as P13
+	
+	distinct{
+			P13.SINGLE_PROFN "OBJECT_ID",
+			'PROF'"TYPE",
+			'SINGLE_PROF'"SUB_TYPE",
+            P13.OBJCT,
+            P13.AUTH,
+            P13.ACT_ID,
+            P13.GROUP_NUMBER			
 	}
 
 UNION
 
-    select from SCAN1_AUTH_P14_COMP_PROF as P14
-    join (
-    		USR10 as USR10
-	) on
-	P14.COMP_PROFN = USR10.PROFN
+	select from SCAN1_AUTH_P14_COMP_PROF as P14
+	
 	distinct{
-			USR10.MODBE,
-			P14.COMP_PROFN,
-			P14.SINGLE_PROFN,
-	        P14.OBJCT,
+			P14.COMP_PROFN "OBJECT_ID",
+			'PROF'"TYPE",
+			'COMP_PROF'"SUB_TYPE",
+            P14.OBJCT,
             P14.AUTH,
-            P14.FIELD,
-            P14.VON,
-            P14.VON_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
-            P14.VON_WILD_CARD,//This is the converted VON field for the fuzzy matching
-            P14.BIS,
-            P14.BIS_LEFT_OF_STAR,//This is the converted field to fix the multiple wildcard issues 
             P14.ACT_ID,
-            P14.GROUP_NUMBER,
-            P14.OBJECT,
-            P14.AUTH_FIELD,
-            P14.AUTH_VALUES_VON,
-            P14.AUTH_VALUES_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
-            P14.AUTH_VALUES_BIS,
-            P14.LOGIC_OPERATOR
+            P14.GROUP_NUMBER			
+	}
+ 
+UNION
+
+	select from SCAN1_AUTH_P15_USERS as P15
+	
+	distinct{
+			P15.BNAME "OBJECT_ID",
+			'USER'"TYPE",
+			null "SUB_TYPE",
+            P15.OBJCT,
+            P15.AUTH,
+            P15.ACT_ID,
+            P15.GROUP_NUMBER			
 	};
-
+	
     //------------------------------------------------------------------------------------------------------
-
 
     //SCAN TCODE----------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1010,118 +1014,132 @@ UNION
 
     //------------------------------------------------------------------------------------------------------
 
+	view SCAN1_TCODE_P02_TCODE_MATCH as 
+	select from SCAN1_TCODE_P01_ALL_MATCHES as P1
+	  distinct {
+            P1.OBJCT,
+            P1.AUTH,
+            P1.ACT_ID,
+            P1.GROUP_NUMBER
+        };
+
+    //------------------------------------------------------------------------------------------------------
+
     //SCAN TCODE TO PROFILE-------------------------------------------------------------------------------------------------------------------------------------------------
 
     //------------------------------------------------------------------------------------------------------
     
-    view SCAN1_TCODE_P02_SINGLE_PROF as 
-    select from SCAN1_TCODE_P01_ALL_MATCHES as P1
+    view SCAN1_TCODE_P03_SINGLE_PROF as 
+    select from SCAN1_TCODE_P02_TCODE_MATCH as P2
     join (
     		UST10S as UST10S
 	) on
-	P1.OBJCT = UST10S.OBJCT
-	and P1.AUTH = UST10S.AUTH
+	P2.OBJCT = UST10S.OBJCT
+	and P2.AUTH = UST10S.AUTH
 	
 	distinct{
-	        UST10S.PROFN,
-            P1.OBJCT,
-            P1.AUTH,
-            P1.FIELD,
-            P1.VON,
-            P1.VON_LEFT_OF_STAR,
-            P1.VON_WILD_CARD,
-            P1.BIS,
-            P1.BIS_LEFT_OF_STAR,
-            P1.ACT_ID,
-            P1.TCODE_OBJCT,
-            P1.TCODE_VON,
-            P1.TCODE_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
-            P1.TCODE_BIS,
-            P1.GROUP_NUMBER
-	};
-
-    //------------------------------------------------------------------------------------------------------
-
-    view SCAN1_TCODE_P03_COMP_PROF as 
-    select from SCAN1_TCODE_P02_SINGLE_PROF as P2
-    left outer join (
-    		UST10C as UST10C
-	) on
-	P2.PROFN = UST10C.SUBPROF
-	distinct{
-			UST10C.PROFN "COMP_PROFN",
-			P2.PROFN "SINGLE_PROFN",
+	        UST10S.PROFN "SINGLE_PROFN",
             P2.OBJCT,
             P2.AUTH,
-            P2.FIELD,
-            P2.VON,
-            P2.VON_LEFT_OF_STAR,
-            P2.VON_WILD_CARD,
-            P2.BIS,
-            P2.BIS_LEFT_OF_STAR,
             P2.ACT_ID,
-            P2.TCODE_OBJCT,
-            P2.TCODE_VON,
-            P2.TCODE_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
-            P2.TCODE_BIS,
             P2.GROUP_NUMBER
 	};
 
     //------------------------------------------------------------------------------------------------------
 
-view SCAN1_TCODE_P04_USERS as 
-    select from SCAN1_TCODE_P03_COMP_PROF as P3
+    view SCAN1_TCODE_P04_COMP_PROF as 
+    select from SCAN1_TCODE_P03_SINGLE_PROF as P3
     join (
-    		USR10 as USR10
+    		UST10C as UST10C
 	) on
-	P3.SINGLE_PROFN = USR10.PROFN
+	P3.SINGLE_PROFN = UST10C.SUBPROF
 	distinct{
-			USR10.MODBE,
-			P3.COMP_PROFN,
+			UST10C.PROFN "COMP_PROFN",
 			P3.SINGLE_PROFN,
             P3.OBJCT,
             P3.AUTH,
-            P3.FIELD,
-            P3.VON,
-            P3.VON_LEFT_OF_STAR,
-            P3.VON_WILD_CARD,
-            P3.BIS,
-            P3.BIS_LEFT_OF_STAR,
             P3.ACT_ID,
-            P3.TCODE_OBJCT,
-            P3.TCODE_VON,
-            P3.TCODE_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
-            P3.TCODE_BIS,
+            P3.GROUP_NUMBER
+	};
+
+    //------------------------------------------------------------------------------------------------------
+
+view SCAN1_TCODE_P05_USERS as 
+    select from SCAN1_TCODE_P03_SINGLE_PROF as P3
+    join (
+    		UST04 as UST04
+	) on
+	P3.SINGLE_PROFN = UST04.PROFILE
+	distinct{
+			UST04.BNAME,
+	        P3.SINGLE_PROFN "PROFILE",
+	        'SINGLE_PROFN' "TYPE",
+            P3.OBJCT,
+            P3.AUTH,
+            P3.ACT_ID,
             P3.GROUP_NUMBER
 	}
 
 UNION
 
-    select from SCAN1_TCODE_P03_COMP_PROF as P3
+    select from SCAN1_TCODE_P04_COMP_PROF as P4
     join (
-    		USR10 as USR10
+    		UST04 as UST04
 	) on
-	P3.COMP_PROFN = USR10.PROFN
+	P4.COMP_PROFN = UST04.PROFILE
 	distinct{
-			USR10.MODBE,
-			P3.COMP_PROFN,
-			P3.SINGLE_PROFN,
-            P3.OBJCT,
-            P3.AUTH,
-            P3.FIELD,
-            P3.VON,
-            P3.VON_LEFT_OF_STAR,
-            P3.VON_WILD_CARD,
-            P3.BIS,
-            P3.BIS_LEFT_OF_STAR,
-            P3.ACT_ID,
-            P3.TCODE_OBJCT,
-            P3.TCODE_VON,
-            P3.TCODE_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
-            P3.TCODE_BIS,
-            P3.GROUP_NUMBER
+			UST04.BNAME,
+	        P4.COMP_PROFN "PROFILE",
+	        'COMP_PROFN' "TYPE",
+            P4.OBJCT,
+            P4.AUTH,
+            P4.ACT_ID,
+            P4.GROUP_NUMBER
 	};
 
+    //------------------------------------------------------------------------------------------------------
+
+view SCAN1_TCODE_P06_ALL as
+	select from SCAN1_TCODE_P03_SINGLE_PROF as P3
+	
+	distinct{
+			P3.SINGLE_PROFN "OBJECT_ID",
+			'PROF'"TYPE",
+			'SINGLE_PROF'"SUB_TYPE",
+            P3.OBJCT,
+            P3.AUTH,
+            P3.ACT_ID,
+            P3.GROUP_NUMBER			
+	}
+
+UNION
+
+	select from SCAN1_TCODE_P04_COMP_PROF as P4
+	
+	distinct{
+			P4.COMP_PROFN "OBJECT_ID",
+			'PROF'"TYPE",
+			'COMP_PROF'"SUB_TYPE",
+            P4.OBJCT,
+            P4.AUTH,
+            P4.ACT_ID,
+            P4.GROUP_NUMBER			
+	}
+ 
+UNION
+
+	select from SCAN1_TCODE_P05_USERS as P5
+	
+	distinct{
+			P5.BNAME "OBJECT_ID",
+			'USER'"TYPE",
+			null "SUB_TYPE",
+            P5.OBJCT,
+            P5.AUTH,
+            P5.ACT_ID,
+            P5.GROUP_NUMBER			
+	};
+  
     //------------------------------------------------------------------------------------------------------
 
     //SCAN 2 PREP-------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1152,7 +1170,7 @@ view SCAN2_ACT_ALL as
 view SCAN2_USER_P01_AUTH as 
     select from SCAN1_AUTH_P15_USERS as P15
 	distinct{
-			P15.MODBE,
+			P15.BNAME,
             P15.ACT_ID,
             P15.GROUP_NUMBER
 	};
@@ -1160,11 +1178,11 @@ view SCAN2_USER_P01_AUTH as
     //------------------------------------------------------------------------------------------------------
 
 view SCAN2_USER_P02_TCODE as 
-    select from SCAN1_TCODE_P04_USERS as P4
+    select from SCAN1_TCODE_P05_USERS as P5
 	distinct{
-			P4.MODBE,
-            P4.ACT_ID,
-            P4.GROUP_NUMBER
+			P5.BNAME,
+            P5.ACT_ID,
+            P5.GROUP_NUMBER
 	};
 
     //------------------------------------------------------------------------------------------------------
@@ -1186,11 +1204,11 @@ view SCAN2_USER_P03_USER_ACT as
 	distinct{
 		ACT_ALL.ACT_ID,
 		ACT_ALL.GROUP_NUMBER,
-		P1.MODBE "AUTH_USER",
-        P2.MODBE "TCODE_USER"
+		P1.BNAME "AUTH_USER",
+        P2.BNAME "TCODE_USER"
 	}
 	
-	where P1.MODBE = P2.MODBE;
+	where P1.BNAME = P2.BNAME;
 
     //------------------------------------------------------------------------------------------------------
 
@@ -1201,7 +1219,8 @@ view SCAN2_USER_P03_USER_ACT as
 view SCAN2_PROF_P01_AUTH as 
     select from SCAN1_AUTH_P13_SINGLE_PROF as P13
 	distinct{
-			P13.PROFN "PROFN",
+			P13.SINGLE_PROFN "PROFN",
+			'SINGLE_PROF' "PROF_TYPE",
             P13.ACT_ID,
             P13.GROUP_NUMBER
 	}
@@ -1211,6 +1230,7 @@ UNION
     select from SCAN1_AUTH_P14_COMP_PROF as P14
 	distinct{
 			P14.COMP_PROFN "PROFN",
+			'COMP_PROF' "PROF_TYPE",
             P14.ACT_ID,
             P14.GROUP_NUMBER
 	};
@@ -1218,18 +1238,20 @@ UNION
     //------------------------------------------------------------------------------------------------------
 
 view SCAN2_PROF_P02_TCODE as 
-    select from SCAN1_TCODE_P02_SINGLE_PROF as P2
+    select from SCAN1_TCODE_P03_SINGLE_PROF as P2
 	distinct{
-			P2.PROFN "PROFN",
+			P2.SINGLE_PROFN "PROFN",
+			'SINGLE_PROF' "PROF_TYPE",
             P2.ACT_ID,
             P2.GROUP_NUMBER
 	}
 
 UNION
 
-    select from SCAN1_TCODE_P03_COMP_PROF as P3
+    select from SCAN1_TCODE_P04_COMP_PROF as P3
 	distinct{
 			P3.COMP_PROFN "PROFN",
+			'COMP_PROF' "PROF_TYPE",
             P3.ACT_ID,
             P3.GROUP_NUMBER
 	};
@@ -1255,10 +1277,14 @@ view SCAN2_PROF_P03_PROF_ACT as
 		ACT_ALL.ACT_ID,
 		ACT_ALL.GROUP_NUMBER,
 		P1.PROFN "AUTH_PROFN",
-        P2.PROFN "TCODE_PROFN"
+		P1.PROF_TYPE "AUTH_PROFN_TYPE",
+        P2.PROFN "TCODE_PROFN",
+        P2.PROF_TYPE "TCODE_PROFN_TYPE"
 	}
 	
-	where P1.PROFN = P2.PROFN;
+	where P1.PROFN = P2.PROFN 
+	AND P1.PROF_TYPE = P2.PROF_TYPE 
+	;
 
     //------------------------------------------------------------------------------------------------------
 
@@ -1266,7 +1292,7 @@ view SCAN2_PROF_P03_PROF_ACT as
 
     //------------------------------------------------------------------------------------------------------
     
-view SCAN2_ROLE_P01_AUTH as 
+view SCAN2_ROLE_SINGLE_P01_AUTH as 
     select from SCAN2_PROF_P01_AUTH as P1
 	join (
 			AGR_1016 as AGR_1016
@@ -1281,7 +1307,7 @@ view SCAN2_ROLE_P01_AUTH as
 
     //------------------------------------------------------------------------------------------------------
 
-view SCAN2_ROLE_P02_TCODE as 
+view SCAN2_ROLE_SINGLE_P02_TCODE as 
     select from SCAN2_PROF_P02_TCODE as P2
 	join (
 			AGR_1016 as AGR_1016
@@ -1296,17 +1322,17 @@ view SCAN2_ROLE_P02_TCODE as
 
     //------------------------------------------------------------------------------------------------------
 
-view SCAN2_ROLE_P03_PROF_ACT as 
+view SCAN2_ROLE_SINGLE_P03_ROLE_ACT as 
     select from SCAN2_ACT_ALL as ACT_ALL
     
    left outer join (
-    		SCAN2_ROLE_P01_AUTH as P1
+    		SCAN2_ROLE_SINGLE_P01_AUTH as P1
 	) on
 	ACT_ALL.ACT_ID = P1.ACT_ID
 	and ACT_ALL.GROUP_NUMBER = P1.GROUP_NUMBER
 	
 	left outer join (
-    		SCAN2_ROLE_P02_TCODE as P2
+    		SCAN2_ROLE_SINGLE_P02_TCODE as P2
 	) on
 	ACT_ALL.ACT_ID = P2.ACT_ID
 	and ACT_ALL.GROUP_NUMBER = P2.GROUP_NUMBER
@@ -1320,6 +1346,107 @@ view SCAN2_ROLE_P03_PROF_ACT as
 	where P1.AGR_NAME = P2.AGR_NAME;
 
     //------------------------------------------------------------------------------------------------------
+    
+view SCAN2_ROLE_COMP_P01_AUTH as 
+    select from SCAN2_ROLE_SINGLE_P01_AUTH as P1
+	join (
+			AGR_AGRS as AGR_AGRS
+		)on 
+		P1.AGR_NAME = AGR_AGRS.CHILD_AGR
+	distinct{
+			AGR_AGRS.AGR_NAME,
+            P1.AGR_NAME "CHILD_AGR",
+            P1.ACT_ID,
+            P1.GROUP_NUMBER
+	};    
+
+    //------------------------------------------------------------------------------------------------------
+
+view SCAN2_ROLE_COMP_P02_TCODE as 
+    select from SCAN2_ROLE_SINGLE_P02_TCODE as P2
+	join (
+			AGR_AGRS as AGR_AGRS
+		)on 
+		P2.AGR_NAME = AGR_AGRS.CHILD_AGR
+	distinct{
+			AGR_AGRS.AGR_NAME,
+            P2.AGR_NAME "CHILD_AGR",
+            P2.ACT_ID,
+            P2.GROUP_NUMBER
+	};    
+
+    //------------------------------------------------------------------------------------------------------
+
+view SCAN2_ROLE_COMP_P03_ROLE_ACT as 
+    select from SCAN2_ACT_ALL as ACT_ALL
+    
+   left outer join (
+    		SCAN2_ROLE_COMP_P01_AUTH as P1
+	) on
+	ACT_ALL.ACT_ID = P1.ACT_ID
+	and ACT_ALL.GROUP_NUMBER = P1.GROUP_NUMBER
+	
+	left outer join (
+    		SCAN2_ROLE_COMP_P02_TCODE as P2
+	) on
+	ACT_ALL.ACT_ID = P2.ACT_ID
+	and ACT_ALL.GROUP_NUMBER = P2.GROUP_NUMBER
+	distinct{
+		ACT_ALL.ACT_ID,
+		ACT_ALL.GROUP_NUMBER,
+		P1.AGR_NAME "AUTH_ROLE_COMP",
+        P2.AGR_NAME "TCODE_ROLE_COMP"
+	}
+	
+	where P1.AGR_NAME = P2.AGR_NAME;
+
+    //------------------------------------------------------------------------------------------------------
+
+view SCAN2_ROLE_FULL as 
+	select from SCAN2_ROLE_SINGLE_P03_ROLE_ACT as SINGLE
+		distinct{
+		SINGLE.ACT_ID,
+		SINGLE.GROUP_NUMBER,
+		SINGLE.AUTH_ROLE "ROLE_ID",
+		'SINGLE' "TYPE"
+		}
+UNION
+	select from SCAN2_ROLE_COMP_P03_ROLE_ACT as COMP
+	distinct{
+		COMP.ACT_ID,
+		COMP.GROUP_NUMBER,
+		COMP.AUTH_ROLE_COMP "ROLE_ID",
+		'COMP' "TYPE"		
+	};
+    //------------------------------------------------------------------------------------------------------
+
+view SCAN2_FULL as 
+	select from SCAN2_PROF_P03_PROF_ACT as PROF
+	distinct{
+		PROF.ACT_ID,
+		PROF.GROUP_NUMBER,
+		PROF.AUTH_PROFN "OBJECT_ID",
+		'PROF' "OBJECT_TYPE",
+		PROF.AUTH_PROFN_TYPE "OBJECT_SUB_TYPE"
+	}
+UNION
+	select from SCAN2_ROLE_FULL as ROLE
+	distinct{
+		ROLE.ACT_ID,
+		ROLE.GROUP_NUMBER,
+		ROLE.ROLE_ID "OBJECT_ID",
+		'ROLE' "OBJECT_TYPE",
+		ROLE.TYPE "OBJECT_SUB_TYPE"
+	}
+UNION
+	select from SCAN2_USER_P03_USER_ACT as USER
+	distinct{
+		USER.ACT_ID,
+		USER.GROUP_NUMBER,
+		USER.AUTH_USER "OBJECT_ID",
+		'USER' "OBJECT_TYPE",
+		null "OBJECT_SUB_TYPE"
+	};
 
     //-------------------------------------------------------------------------------------------------------------------------------------------------
 

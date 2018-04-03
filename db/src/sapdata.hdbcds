@@ -61,10 +61,9 @@ context sapdata {
 		AUTHS : String(60);
 		TEXT : String(60);
 	};	
-	
 
 	entity AGR_1016{
-		MANDT : String(3);
+		MANDT : String(60);
 		AGR_NAME : String(60);
 		COUNTER : String(60);
 		PROFILE : String(60);
@@ -72,6 +71,40 @@ context sapdata {
 		GENERATED : String(60);
 		PSTATE : String(60);
 	};
+	
+	entity AGR_PROF{
+		MANDT : String(60);
+		AGR_NAME : String(60);
+		LANGU : String(60);
+		PROFILE : String(60);
+		PTEXT : String(60);
+	};
 
-
+	entity AGR_DEFINE{
+	MANDT : String(60);
+	AGR_NAME : String(60);
+	PARENT_AGR : String(60);
+	CREATE_USR : String(60);
+	CREATE_DAT : String(60);
+	CREATE_TIM : String(60);
+	CREATE_TMP : String(60);
+	CHANGE_USR : String(60);
+	CHANGE_DAT : String(60);
+	CHANGE_TIM : String(60);
+	CHANGE_TMP : String(60);
+	ATTRIBUTES : String(60);
+	};
+	
+	entity AGR_AGRS{
+	MANDT : String(60);
+	AGR_NAME : String(60);
+	CHILD_AGR : String(60);
+	ATTRIBUTES : String(60);
+	};
+	
+	entity UST04{
+	MANDT : String(60);
+	BNAME : String(60);
+	PROFILE : String(60);
+	};
 };

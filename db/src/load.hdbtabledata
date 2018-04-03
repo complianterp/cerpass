@@ -386,5 +386,66 @@
   },
   "import_settings": {"import_columns": ["MANDT","AGR_NAME","COUNTER","PROFILE","VARIANT","GENERATED","PSTATE"]},
   "column_mappings": {"MANDT": 1,"AGR_NAME": 2,"COUNTER": 3,"PROFILE": 4,"VARIANT": 5,"GENERATED": 6,"PSTATE": 7}
+ },
+ 
+ 
+   {
+  "target_table": "cerpass.db::sapdata.AGR_PROF",
+  "source_data": {
+   "data_type": "CSV",
+   "file_name": "cerpass.db.data::AGR_PROF.csv",
+   "has_header": true,
+   "dialect": "HANA",
+   "type_config": {
+    "delimiter": ","
+   }
+  },
+  "import_settings": {"import_columns": ["MANDT","AGR_NAME","LANGU","PROFILE","PTEXT"]},
+  "column_mappings": {"MANDT": 1,"AGR_NAME": 2,"LANGU": 3,"PROFILE": 4,"PTEXT": 5}
+ },
+ 
+   {
+  "target_table": "cerpass.db::sapdata.AGR_DEFINE",
+  "source_data": {
+   "data_type": "CSV",
+   "file_name": "cerpass.db.data::AGR_DEFINE.csv",
+   "has_header": true,
+   "dialect": "HANA",
+   "type_config": {
+    "delimiter": ","
+   }
+  },
+  "import_settings": {"import_columns": ["MANDT","AGR_NAME","PARENT_AGR","CREATE_USR","CREATE_DAT","CREATE_TIM","CREATE_TMP","CHANGE_USR","CHANGE_DAT", "CHANGE_TIM","CHANGE_TMP","ATTRIBUTES"]},
+  "column_mappings": {"MANDT": 1,"AGR_NAME": 2,"PARENT_AGR": 3,"CREATE_USR": 4,"CREATE_DAT": 5,"CREATE_TIM": 6,"CREATE_TMP": 7,"CHANGE_USR": 8,"CHANGE_DAT": 9,"CHANGE_TIM": 10,"CHANGE_TMP": 11,"ATTRIBUTES": 12}
+ },
+ 
+    {
+  "target_table": "cerpass.db::sapdata.AGR_AGRS",
+  "source_data": {
+   "data_type": "CSV",
+   "file_name": "cerpass.db.data::AGR_AGRS.csv",
+   "has_header": true,
+   "dialect": "HANA",
+   "type_config": {
+    "delimiter": ","
+   }
+  },
+  "import_settings": {"import_columns": ["MANDT","AGR_NAME","CHILD_AGR","ATTRIBUTES"]},
+  "column_mappings": {"MANDT": 1,"AGR_NAME": 2,"CHILD_AGR": 3,"ATTRIBUTES": 4}
+ },
+ 
+     {
+  "target_table": "cerpass.db::sapdata.UST04",
+  "source_data": {
+   "data_type": "CSV",
+   "file_name": "cerpass.db.data::UST04.csv",
+   "has_header": true,
+   "dialect": "HANA",
+   "type_config": {
+    "delimiter": ","
+   }
+  },
+  "import_settings": {"import_columns": ["MANDT","BNAME","PROFILE"]},
+  "column_mappings": {"MANDT": 1,"BNAME": 2,"PROFILE": 3}
  }]
 }
