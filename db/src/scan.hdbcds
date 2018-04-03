@@ -27,6 +27,7 @@ using cerpass.db::sapdata.USR10;
 using cerpass.db::sapdata.AGR_1016;//In Use
 using cerpass.db::sapdata.UST04;//In Use
 using cerpass.db::sapdata.AGR_AGRS;//In Use
+using cerpass.db::sapdata.USR02;//In Use
 
 context scan {
 
@@ -1211,6 +1212,23 @@ view SCAN2_USER_P03_USER_ACT as
 	where P1.BNAME = P2.BNAME;
 
     //------------------------------------------------------------------------------------------------------
+    
+view SCAN2_USER_P04_FULL as 
+	select from SCAN2_USER_P03_USER_ACT as P3
+	
+	join (
+		USR02 as USR02
+	) on
+    P3.AUTH_USER = USR02.BNAME
+    
+    distinct{
+    	P3.ACT_ID,
+		P3.GROUP_NUMBER,
+		P3.AUTH_USER "BNAME",
+		USR02.USTYP
+    };
+    
+    //------------------------------------------------------------------------------------------------------
 
     //SCAN 2 PROF-------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1439,13 +1457,13 @@ UNION
 		ROLE.TYPE "OBJECT_SUB_TYPE"
 	}
 UNION
-	select from SCAN2_USER_P03_USER_ACT as USER
+	select from SCAN2_USER_P04_FULL as USER
 	distinct{
 		USER.ACT_ID,
 		USER.GROUP_NUMBER,
-		USER.AUTH_USER "OBJECT_ID",
+		USER.BNAME "OBJECT_ID",
 		'USER' "OBJECT_TYPE",
-		null "OBJECT_SUB_TYPE"
+		USER.USTYP "OBJECT_SUB_TYPE"
 	};
 
     //-------------------------------------------------------------------------------------------------------------------------------------------------

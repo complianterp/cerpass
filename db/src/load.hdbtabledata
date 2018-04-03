@@ -447,5 +447,22 @@
   },
   "import_settings": {"import_columns": ["MANDT","BNAME","PROFILE"]},
   "column_mappings": {"MANDT": 1,"BNAME": 2,"PROFILE": 3}
+ },
+ 
+ 
+ 
+    {
+  "target_table": "cerpass.db::sapdata.USR02",
+  "source_data": {
+   "data_type": "CSV",
+   "file_name": "cerpass.db.data::USR02.csv",
+   "has_header": true,
+   "dialect": "HANA",
+   "type_config": {
+    "delimiter": ","
+   }
+  },
+  "import_settings": {"import_columns": ["MANDT","BNAME","BCODE","GLTGV","GLTGB","USTYP","CLASS","LOCNT","UFLAG", "ACCNT","ANAME","ERDAT","TRDAT","LTIME","OCOD1","BCDA1","CODV1","OCOD2","BCDA2","CODV2","OCOD3","BCDA3","CODV3","OCOD4","BCDA4","CODV4","OCOD5","BCDA5","CODV5","VERSN","CODVN","TZONE","ZBVMASTER","PASSCODE","PWDCHGDATE","PWDSTATE","RESERVED","PWDHISTORY","PWDLGNDATE","PWDSETDATE","PWDINITIAL","PWDLOCKDATE","PWDSALTEDHASH","SECURITY_POLICY"]},
+  "column_mappings": {"MANDT": 1,"BNAME": 2,"BCODE": 3,"GLTGV": 4,"GLTGB": 5,"USTYP": 6,"CLASS": 7,"LOCNT": 8,"UFLAG": 9,"ACCNT": 10,"ANAME": 11,"ERDAT": 12,"TRDAT": 13,"LTIME": 14,"OCOD1": 15,"BCDA1": 16,"CODV1": 17,"OCOD2": 18,"BCDA2": 19,"CODV2": 20,"OCOD3": 21,"BCDA3": 22,"CODV3": 23,"OCOD4": 24,"BCDA4": 25,"CODV4": 26,"OCOD5": 27,"BCDA5": 28,"CODV5": 29,"VERSN": 30,"CODVN": 31,"TZONE": 32,"ZBVMASTER": 33,"PASSCODE": 34,"PWDCHGDATE": 35,"PWDSTATE": 36,"RESERVED": 37,"PWDHISTORY": 38,"PWDLGNDATE": 39,"PWDSETDATE": 40,"PWDINITIAL": 41,"PWDLOCKDATE": 42,"PWDSALTEDHASH": 43,"SECURITY_POLICY": 44}
  }]
 }
