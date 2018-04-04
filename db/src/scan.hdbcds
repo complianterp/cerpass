@@ -1466,7 +1466,72 @@ UNION
 		USER.USTYP "OBJECT_SUB_TYPE"
 	};
 
-    //-------------------------------------------------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------
 
-    //------------------------------------------------------------------------------------------------------    
+    //SCAN 3 -------------------------------------------------------------------------------------------------------------------------------------------------
+
+    //------------------------------------------------------------------------------------------------------
+    
+view SCAN3_P01_TEST_COUNT as
+	select from TEST_ACTIVITY as TEST_ACTIVITY
+	distinct{
+	TEST_ACTIVITY.TST_ID,
+	count(TEST_ACTIVITY.ACT_ID) as ACT_COUNT
+	}
+	group by 
+	TEST_ACTIVITY.TST_ID;
+
+    //------------------------------------------------------------------------------------------------------
+
+
+view SCAN3_P02_ACT_DISTINCT as 
+	select from SCAN2_FULL as SCAN2
+	join(
+		TEST_ACTIVITY as TEST_ACTIVITY
+	)on
+	SCAN2.ACT_ID = TEST_ACTIVITY.ACT_ID
+	
+	distinct{
+	TEST_ACTIVITY.TST_ID,
+	SCAN2.ACT_ID,
+	SCAN2.OBJECT_ID,
+	SCAN2.OBJECT_TYPE,
+	SCAN2.OBJECT_SUB_TYPE
+	}
+	
+	ORDER BY TST_ID, OBJECT_ID, ACT_ID;
+
+
+    //------------------------------------------------------------------------------------------------------
+
+view SCAN3_P03_ACT_COUNT as 
+	select from SCAN3_P02_ACT_DISTINCT as P2
+	distinct{
+	P2.TST_ID,
+	count(P2.ACT_ID) as ACT_ID_COUNT,
+	P2.OBJECT_ID,
+	P2.OBJECT_TYPE,
+	P2.OBJECT_SUB_TYPE
+	}
+	group by
+	P2.TST_ID,
+	P2.OBJECT_ID,
+	P2.OBJECT_TYPE,
+	P2.OBJECT_SUB_TYPE;
+	
+    //------------------------------------------------------------------------------------------------------
+	
+view SCAN3_P04_MATCH as
+	select from SCAN3_P03_ACT_COUNT as P3
+	join(
+		SCAN3_P01_TEST_COUNT as P1
+	)on
+	P3.TST_ID = P1.TST_ID
+	and P3.ACT_ID_COUNT = P1.ACT_COUNT
+	distinct{
+	P1.TST_ID,
+	P3.OBJECT_ID,
+	P3.OBJECT_TYPE,
+	P3.OBJECT_SUB_TYPE
+	};
 };
