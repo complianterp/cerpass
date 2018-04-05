@@ -435,8 +435,36 @@ context scan {
 
     //------------------------------------------------------------------------------------------------------
 		/*This view is a UNION of SCAN1_AUTH_P04_AND_VALUE_TRUE and SCAN1_AUTH_P05_OR_VALUE_TRUE to produce a full list of value matches.*/
-
-    view SCAN1_AUTH_P06_UNION_VALUE_TRUE as
+	view SCAN1_AUTH_P06TEST_UNION_VALUE_TRUE as
+		select from SCAN1_AUTH_P04_AND_VALUE_TRUE as P4
+			distinct{
+			P4.OBJCT,
+            P4.AUTH,
+            P4.FIELD,
+            P4.VON,
+            P4.BIS,
+            P4.ACT_ID,
+            P4.GROUP_NUMBER,
+            P4.OBJECT,
+            P4.AUTH_FIELD,
+            P4.LOGIC_OPERATOR
+			}
+   union
+		select from SCAN1_AUTH_P05_OR_VALUE_TRUE as P5
+		distinct{
+            P5.OBJCT,
+            P5.AUTH,
+            P5.FIELD,
+            P5.VON,
+            P5.BIS,
+            P5.ACT_ID,
+            P5.GROUP_NUMBER,
+            P5.OBJECT,
+            P5.AUTH_FIELD,
+            P5.LOGIC_OPERATOR
+		};
+   
+    /*view SCAN1_AUTH_P06_UNION_VALUE_TRUE as
         select from SCAN1_AUTH_P03_AND_VALUE_COUNT as P3
         join (
                     SCAN1_AUTH_P02_AUTH_AND_VALUE_COUNT as P2
@@ -477,10 +505,12 @@ context scan {
                 (
                     (P1.LOGIC_OPERATOR) = '2'
                 )
-            );
+            );*/
 
     //------------------------------------------------------------------------------------------------------
 		/*This view produces a list of distinct AUTH_FIELD values from ACT_AUTH to then perform a count on the AUTH_FIELD field.*/
+
+    //------------------------------------------------------------------------------------------------------
 
     view SCAN1_AUTH_P07_AUTH_FIELD as
         select from ACT_AUTH distinct
@@ -658,7 +688,7 @@ context scan {
         };
 
     //------------------------------------------------------------------------------------------------------
-		/*This view joins the true Auth matches from SCAN1_AUTH_P11_MATCH_FIELD_TRUE to the Auths corresponding Comp Profile in UST10C.*/
+		/*This view joins UST10C to the results of SCAN1_AUTH_P13 producing the list of composite profile matches.*/
 
     view SCAN1_AUTH_P14_COMP_PROF as
         select from SCAN1_AUTH_P13_SINGLE_PROF as P13
@@ -677,7 +707,7 @@ context scan {
         };
 
     //------------------------------------------------------------------------------------------------------
-
+		/*This view is a Union of SCAN1_AUTH_P13 and SCAN1_AUTH_P14 creating a single output table for auth profile matches with a column identifying the type of profile.*/
 	view SCAN1_AUTH_P15_PROF_UNION as
 	select from SCAN1_AUTH_P13_SINGLE_PROF as P13
 	    {
@@ -702,7 +732,7 @@ UNION
 
 
     //------------------------------------------------------------------------------------------------------
-		/*This view shows the User Activity Auth matches.  This is done by joining SCAN1_AUTH_P15_PROF_UNION to UST04.*/
+		/*This view shows the User Activity Auth matches.  This is done by joining SCAN1_AUTH_P15 to UST04.  The user type is also added into the view by joining UST04 and USR02.*/
 
     view SCAN1_AUTH_P16_USERS as
         select from SCAN1_AUTH_P15_PROF_UNION as P15
@@ -727,7 +757,7 @@ UNION
         };
 
     //------------------------------------------------------------------------------------------------------
-    
+    	/*This view shows the Auth single role matches. This is done by connecting SCAN1_AUTH_P15 to AGR_1016.*/
 	view SCAN1_AUTH_P17_ROLE_SINGLE as
 		select from SCAN1_AUTH_P15_PROF_UNION as P15
 		join (
@@ -745,7 +775,7 @@ UNION
 					};
 
     //------------------------------------------------------------------------------------------------------
-
+	//This view produces a list of Auth composite role matches.  This si done by joining the results of SCAN1_AUTH_P17 to AGR_AGRS.
 	view SCAN1_AUTH_P18_ROLE_COMP as
 		select from SCAN1_AUTH_P17_ROLE_SINGLE as P17
 		join (
@@ -764,30 +794,34 @@ UNION
 		};
 
     //------------------------------------------------------------------------------------------------------
+    //This view is a Union of SCAN1_AUTH_P17 and SCAN1_AUTH_P18 crating a single output table for role matches with a column identifying the type of role.
 
-	    view SCAN1_AUTH_P19_ROLE_UNION as
-    select from SCAN1_AUTH_P17_ROLE_SINGLE as P17 distinct
-    {
-        P17.AGR_NAME,
-        'SINGLE_ROLE' "TYPE",
-        P17.OBJCT,
-        P17.AUTH,
-        P17.ACT_ID,
-        P17.GROUP_NUMBER
-    }
+    view SCAN1_AUTH_P19_ROLE_UNION as
+        select from SCAN1_AUTH_P17_ROLE_SINGLE as P17 distinct
+        {
+    P17.AGR_NAME,
+    'SINGLE_ROLE' "TYPE",
+    P17.OBJCT,
+    P17.AUTH,
+    P17.ACT_ID,
+    P17.GROUP_NUMBER
+        }
     union
-    select from SCAN1_AUTH_P18_ROLE_COMP as P18   distinct
-    {
-        P18.AGR_NAME,
-        'COMP_ROLE' "TYPE",
-        P18.OBJCT,
-        P18.AUTH,
-        P18.ACT_ID,
-        P18.GROUP_NUMBER
-    };
+        select from SCAN1_AUTH_P18_ROLE_COMP as P18   distinct
+        {
+    P18.AGR_NAME,
+    'COMP_ROLE' "TYPE",
+    P18.OBJCT,
+    P18.AUTH,
+    P18.ACT_ID,
+    P18.GROUP_NUMBER
+        };
 
     //------------------------------------------------------------------------------------------------------	
-
+	//This view is a Union of SCAN1_AUTH_P15, SCAN1_AUTH_P16 and SCAN1_AUTH_P19.  This view provides an output 
+	//of all profile, user and role auth matches, providing in one view all the objects that have an activity auth match.  
+	//The column OBJECT_TYPE has been added to identify the type of object for each record.  The column OBJECT_SUB_TYPE has 
+	//been pulled from the type column in the source views to provide the object sub type for each record. 
     view SCAN1_AUTH_P20_ALL as
         select from SCAN1_AUTH_P15_PROF_UNION as P15 distinct
         {
@@ -915,7 +949,7 @@ UNION
 
     //------------------------------------------------------------------------------------------------------
 /*View to add an extra TCODE_VON column into ACT_TCODE where all * values have been replaces with a %
-    		This is required to make the fuzzy matching logic to work*/
+    		This is required to make the fuzzy matching logic to work.*/
 
     view SCAN1_TCODE_P00_ACT_TCODE_CONVERT as
         select from ACT_TCODE as A2
@@ -1084,7 +1118,8 @@ UNION
             );
 
     //------------------------------------------------------------------------------------------------------
-
+	//This view produces a list of AUTH ACT TCODE matches providing the activity and group the AUTH has a TCODE match to.  
+    
     view SCAN1_TCODE_P02_TCODE_MATCH as
         select from SCAN1_TCODE_P01_ALL_MATCHES as P1 distinct
         {
@@ -1099,7 +1134,9 @@ UNION
     //SCAN TCODE TO PROFILE-------------------------------------------------------------------------------------------------------------------------------------------------
 
     //------------------------------------------------------------------------------------------------------
-
+	//This view joins the true TCODE matches from SCAN1_TCODE_P02 to the corresponding Single Profile in UST10S.  
+	//This is done by joining the OBJCT and AUTH values between the two tables.  
+    
     view SCAN1_TCODE_P03_SINGLE_PROF as
         select from SCAN1_TCODE_P02_TCODE_MATCH as P2
         join (
@@ -1117,7 +1154,8 @@ UNION
         };
 
     //------------------------------------------------------------------------------------------------------
-
+	//This view joins UST10C to the results of SCAN1_TCODE_P03 producing the list of composite profile matches.  
+    
     view SCAN1_TCODE_P04_COMP_PROF as
         select from SCAN1_TCODE_P03_SINGLE_PROF as P3
         join (
@@ -1135,6 +1173,7 @@ UNION
         };
 
     //------------------------------------------------------------------------------------------------------
+	//This view is a Union of SCAN1_TCODE_P03 and SCAN1_TCODE_P04 creating a single output table for profile TCODE matches with a column identifying the type of profile.
 
 	view SCAN1_TCODE_P05_PROF_UNION as
 		select from SCAN1_TCODE_P03_SINGLE_PROF as P3
@@ -1160,7 +1199,9 @@ UNION
 		};
 
     //------------------------------------------------------------------------------------------------------
-
+	//This view shows the User Activity TCODE matches.  This is done by joining SCAN1_AUTH_P05 to UST04.  
+	//The user type is also added into the view by joining UST04 and USR02.  
+    
     view SCAN1_TCODE_P06_USERS as
     	select from SCAN1_TCODE_P05_PROF_UNION as P5
     	join (
@@ -1184,25 +1225,26 @@ UNION
     	};
 
     //------------------------------------------------------------------------------------------------------
-
-view SCAN1_TCODE_P07_ROLE_SINGLE as
-	select from SCAN1_TCODE_P05_PROF_UNION as P5
-	join (
-			AGR_1016 as AGR_1016
-			)on
-			P5.PROFN = AGR_1016.PROFILE
-			distinct{
-			AGR_1016.AGR_NAME,
-			P5.PROFN,
-	    	P5.TYPE,
-            P5.OBJCT,
-            P5.AUTH,
-            P5.ACT_ID,
-            P5.GROUP_NUMBER
-
-			};
+    //This view shows the TCODE single role matches. This is done by connecting SCAN1_TCODE_P05 to AGR_1016.
+    view SCAN1_TCODE_P07_ROLE_SINGLE as
+    select from SCAN1_TCODE_P05_PROF_UNION as P5
+    join (
+                AGR_1016 as AGR_1016
+    )                                            on
+        P5.PROFN = AGR_1016.PROFILE
+    distinct
+    {
+        AGR_1016.AGR_NAME,
+        P5.PROFN,
+        P5.TYPE,
+        P5.OBJCT,
+        P5.AUTH,
+        P5.ACT_ID,
+        P5.GROUP_NUMBER
+    };
 
     //------------------------------------------------------------------------------------------------------
+	//This view produces a list of TCODE composite role matches.  This is done by joining the results of SCAN1_AUTH_P17 to AGR_AGRS.
 
 	view SCAN1_TCODE_P08_ROLE_COMP as
 		select from SCAN1_TCODE_P07_ROLE_SINGLE as P7
@@ -1222,7 +1264,7 @@ view SCAN1_TCODE_P07_ROLE_SINGLE as
 		};
 		
     //------------------------------------------------------------------------------------------------------
-
+	//This view is a Union of SCAN1_TCODE_P07 and SCAN1_TCODE_P08 crating a single output table for role matches with a column identifying the type of role.
 	    view SCAN1_TCODE_P09_ROLE_UNION as
     select from SCAN1_TCODE_P07_ROLE_SINGLE as P7 distinct
     {
@@ -1245,6 +1287,9 @@ view SCAN1_TCODE_P07_ROLE_SINGLE as
     };
     
     //------------------------------------------------------------------------------------------------------
+    //This view is a Union of SCAN1_TCODE_P05, SCAN1_TCODE_P06 and SCAN1_TCODE_P09.  
+    //This view provides an output of all profile, user and role TCODE matches, providing in one view all the objects that have an activity TCODE match.  
+    //The column OBJECT_TYPE has been added to identify the type of object for each record.  The column OBJECT_SUB_TYPE has been pulled from the type column in the source views to provide the object sub type for each record. 
     
     view SCAN1_TCODE_P10_ALL as
     	select from SCAN1_TCODE_P05_PROF_UNION as P5 distinct
@@ -1285,6 +1330,7 @@ view SCAN1_TCODE_P07_ROLE_SINGLE as
     //SCAN 2 PREP-------------------------------------------------------------------------------------------------------------------------------------------------
 
     //------------------------------------------------------------------------------------------------------
+   //This view is a union of ACT_AUTH and ACT_TCODE providing a full list of ACT_ID and GROUP_NUMBER values to be used in scan 2.  
     view SCAN2_P00_ACT_ALL as
         select from ACT_AUTH as ACT_AUTH   distinct
         {
@@ -1306,66 +1352,10 @@ view SCAN1_TCODE_P07_ROLE_SINGLE as
     //SCAN 2 USERS-------------------------------------------------------------------------------------------------------------------------------------------------
 
     //------------------------------------------------------------------------------------------------------
-
-/*    view SCAN2_USER_P01_AUTH as
-        select from SCAN1_AUTH_P16_USERS as P16 distinct
-        {
-            P16.BNAME,
-            P16.ACT_ID,
-            P16.GROUP_NUMBER
-        };
-
-    //------------------------------------------------------------------------------------------------------
-
-    view SCAN2_USER_P02_TCODE as
-        select from SCAN1_TCODE_P06_USERS as P6 distinct
-        {
-            P6.BNAME,
-            P6.ACT_ID,
-            P6.GROUP_NUMBER
-        };
-
-    //------------------------------------------------------------------------------------------------------
-
-    view SCAN2_USER_P03_USER_ACT as
-        select from SCAN2_ACT_ALL as ACT_ALL
-        left outer join (
-                    SCAN2_USER_P01_AUTH as P1
-        )                                      on
-                ACT_ALL.ACT_ID       = P1.ACT_ID
-            and ACT_ALL.GROUP_NUMBER = P1.GROUP_NUMBER
-        left outer join (
-                    SCAN2_USER_P02_TCODE as P2
-        )                                      on
-                ACT_ALL.ACT_ID       = P2.ACT_ID
-            and ACT_ALL.GROUP_NUMBER = P2.GROUP_NUMBER
-        distinct
-        {
-            ACT_ALL.ACT_ID,
-            ACT_ALL.GROUP_NUMBER,
-            P1.BNAME "AUTH_USER",
-            P2.BNAME "TCODE_USER"
-        }
-        where
-            P1.BNAME = P2.BNAME;
-
-    //------------------------------------------------------------------------------------------------------
-
-    view SCAN2_USER_P04_FULL as
-        select from SCAN2_USER_P03_USER_ACT as P3
-        join (
-                    USR02 as USR02
-        )                                         on
-            P3.AUTH_USER = USR02.BNAME
-        distinct
-        {
-            P3.ACT_ID,
-            P3.GROUP_NUMBER,
-            P3.AUTH_USER "BNAME",
-            USR02.USTYP
-        };
-*/
-
+	//This view uses the Scan 2 prep view and joins it to SCAN1_AUTH_P16 (AUTH match view) and SCAN1_TCODE_P06 (TCODE match view) on ACT_ID and GROUP_NUMBER.  
+	//A where clause is then used to ensure the BNAME and USTYP from are the same from the AUTH match view and the TCODE match view.  
+	//This then provides a list of user activity group matches where the user has the activity because they have both the authorisation and transaction to execute the activity. 
+    
     view SCAN2_P01_USER_ACT as
         select from SCAN2_P00_ACT_ALL as ACT_ALL
         left outer join (
@@ -1394,56 +1384,9 @@ view SCAN1_TCODE_P07_ROLE_SINGLE as
     //SCAN 2 PROF-------------------------------------------------------------------------------------------------------------------------------------------------
 
     //------------------------------------------------------------------------------------------------------
-
-    /*view SCAN2_PROF_P01_AUTH as
-        select from SCAN1_AUTH_P15_PROF_UNION as P15
-        	distinct{
-        	P15.PROFN,
-            P15.TYPE "PROF_TYPE",
-            P15.ACT_ID,
-            P15.GROUP_NUMBER
-        	};
-
-    //------------------------------------------------------------------------------------------------------
-
-    view SCAN2_PROF_P02_TCODE as
-        select from SCAN1_TCODE_P05_PROF_UNION as P5
-        	distinct{
-        	P5.PROFN,
-        	P5.TYPE "PROF_TYPE",
-        	P5.ACT_ID,
-        	P5.GROUP_NUMBER
-        	};
-
-    //------------------------------------------------------------------------------------------------------
-
-    view SCAN2_PROF_P03_PROF_ACT as
-        select from SCAN2_ACT_ALL as ACT_ALL
-        left outer join (
-                    SCAN2_PROF_P01_AUTH as P1
-        )                                      on
-                ACT_ALL.ACT_ID       = P1.ACT_ID
-            and ACT_ALL.GROUP_NUMBER = P1.GROUP_NUMBER
-        left outer join (
-                    SCAN2_PROF_P02_TCODE as P2
-        )                                      on
-                ACT_ALL.ACT_ID       = P2.ACT_ID
-            and ACT_ALL.GROUP_NUMBER = P2.GROUP_NUMBER
-        distinct
-        {
-            ACT_ALL.ACT_ID,
-            ACT_ALL.GROUP_NUMBER,
-            P1.PROFN "AUTH_PROFN",
-            P1.PROF_TYPE "AUTH_PROFN_TYPE",
-            P2.PROFN "TCODE_PROFN",
-            P2.PROF_TYPE "TCODE_PROFN_TYPE"
-        }
-        where
-                P1.PROFN     = P2.PROFN
-            and P1.PROF_TYPE = P2.PROF_TYPE;
-
-    //------------------------------------------------------------------------------------------------------
-*/
+	//This view uses the Scan 2 prep view and joins it to SCAN1_AUTH_P15 (AUTH match view) and SCAN1_TCODE_P05 (TCODE match view) on ACT_ID and GROUP_NUMBER.  
+	//A where clause is then used to ensure the PROFN and TYPE are the same from the AUTH match view and the TCODE match view.  
+	//This then provides a list of profile activity group matches where the profile has the activity because it has both the authorisation and transaction to execute the activity. 
 
     view SCAN2_P02_PROF_ACT as
         select from SCAN2_P00_ACT_ALL as ACT_ALL
@@ -1473,138 +1416,9 @@ view SCAN1_TCODE_P07_ROLE_SINGLE as
     //SCAN 2 ROLE-------------------------------------------------------------------------------------------------------------------------------------------------
 
     //------------------------------------------------------------------------------------------------------
-
-/*    view SCAN2_ROLE_SINGLE_P01_AUTH as
-        select from SCAN2_PROF_P01_AUTH as P1
-        join (
-                    AGR_1016 as AGR_1016
-        )                                     on
-            P1.PROFN = AGR_1016.PROFILE
-        distinct
-        {
-            AGR_1016.AGR_NAME,
-            P1.PROFN "PROFN",
-            P1.ACT_ID,
-            P1.GROUP_NUMBER
-        };
-
-    //------------------------------------------------------------------------------------------------------
-
-    view SCAN2_ROLE_SINGLE_P02_TCODE as
-        select from SCAN2_PROF_P02_TCODE as P2
-        join (
-                    AGR_1016 as AGR_1016
-        )                                      on
-            P2.PROFN = AGR_1016.PROFILE
-        distinct
-        {
-            AGR_1016.AGR_NAME,
-            P2.PROFN,
-            P2.ACT_ID,
-            P2.GROUP_NUMBER
-        };
-
-    //------------------------------------------------------------------------------------------------------
-
-    view SCAN2_ROLE_SINGLE_P03_ROLE_ACT as
-        select from SCAN2_ACT_ALL as ACT_ALL
-        left outer join (
-                    SCAN2_ROLE_SINGLE_P01_AUTH as P1
-        )                                             on
-                ACT_ALL.ACT_ID       = P1.ACT_ID
-            and ACT_ALL.GROUP_NUMBER = P1.GROUP_NUMBER
-        left outer join (
-                    SCAN2_ROLE_SINGLE_P02_TCODE as P2
-        )                                             on
-                ACT_ALL.ACT_ID       = P2.ACT_ID
-            and ACT_ALL.GROUP_NUMBER = P2.GROUP_NUMBER
-        distinct
-        {
-            ACT_ALL.ACT_ID,
-            ACT_ALL.GROUP_NUMBER,
-            P1.AGR_NAME "AUTH_ROLE",
-            P2.AGR_NAME "TCODE_ROLE"
-        }
-        where
-            P1.AGR_NAME = P2.AGR_NAME;
-
-    //------------------------------------------------------------------------------------------------------
-
-    view SCAN2_ROLE_COMP_P01_AUTH as
-        select from SCAN2_ROLE_SINGLE_P01_AUTH as P1
-        join (
-                    AGR_AGRS as AGR_AGRS
-        )                                            on
-            P1.AGR_NAME = AGR_AGRS.CHILD_AGR
-        distinct
-        {
-            AGR_AGRS.AGR_NAME,
-            P1.AGR_NAME "CHILD_AGR",
-            P1.ACT_ID,
-            P1.GROUP_NUMBER
-        };
-
-    //------------------------------------------------------------------------------------------------------
-
-    view SCAN2_ROLE_COMP_P02_TCODE as
-        select from SCAN2_ROLE_SINGLE_P02_TCODE as P2
-        join (
-                    AGR_AGRS as AGR_AGRS
-        )                                             on
-            P2.AGR_NAME = AGR_AGRS.CHILD_AGR
-        distinct
-        {
-            AGR_AGRS.AGR_NAME,
-            P2.AGR_NAME "CHILD_AGR",
-            P2.ACT_ID,
-            P2.GROUP_NUMBER
-        };
-
-    //------------------------------------------------------------------------------------------------------
-
-    view SCAN2_ROLE_COMP_P03_ROLE_ACT as
-        select from SCAN2_ACT_ALL as ACT_ALL
-        left outer join (
-                    SCAN2_ROLE_COMP_P01_AUTH as P1
-        )                                           on
-                ACT_ALL.ACT_ID       = P1.ACT_ID
-            and ACT_ALL.GROUP_NUMBER = P1.GROUP_NUMBER
-        left outer join (
-                    SCAN2_ROLE_COMP_P02_TCODE as P2
-        )                                           on
-                ACT_ALL.ACT_ID       = P2.ACT_ID
-            and ACT_ALL.GROUP_NUMBER = P2.GROUP_NUMBER
-        distinct
-        {
-            ACT_ALL.ACT_ID,
-            ACT_ALL.GROUP_NUMBER,
-            P1.AGR_NAME "AUTH_ROLE_COMP",
-            P2.AGR_NAME "TCODE_ROLE_COMP"
-        }
-        where
-            P1.AGR_NAME = P2.AGR_NAME;
-
-    //------------------------------------------------------------------------------------------------------
-
-    view SCAN2_ROLE_FULL as
-        select from SCAN2_ROLE_SINGLE_P03_ROLE_ACT as SINGLE distinct
-        {
-            SINGLE.ACT_ID,
-            SINGLE.GROUP_NUMBER,
-            SINGLE.AUTH_ROLE "ROLE_ID",
-            'SINGLE' "TYPE"
-        }
-    union
-        select from SCAN2_ROLE_COMP_P03_ROLE_ACT as COMP     distinct
-        {
-            COMP.ACT_ID,
-            COMP.GROUP_NUMBER,
-            COMP.AUTH_ROLE_COMP "ROLE_ID",
-            'COMP' "TYPE"
-        };
-
-    //------------------------------------------------------------------------------------------------------
-*/
+	//This view uses the Scan 2 prep view and joins it to SCAN1_AUTH_P19 (AUTH match view) and SCAN1_TCODE_P09 (TCODE match view) on ACT_ID and GROUP_NUMBER.  
+	//A where clause is then used to ensure the AGR_NAME and TYPE are the same from the AUTH match view and the TCODE match view.  
+	//This then provides a list of role activity group matches where the role has the activity because it has both the authorisation and transaction to execute the activity. 
 
     view SCAN2_P03_ROLE_ACT as
         select from SCAN2_P00_ACT_ALL as ACT_ALL
@@ -1631,7 +1445,8 @@ view SCAN1_TCODE_P07_ROLE_SINGLE as
 
 
     //------------------------------------------------------------------------------------------------------
-
+	//This view is a union of SCAN2_P01, SCAN2_P02 and SCAN2_P03 providing a full list of object activity matches.  
+	//Columns have been added to identify the object type and object sub type within the full output list. 
 
     view SCAN2_P04_FULL as
         select from SCAN2_P02_PROF_ACT as PROF distinct
@@ -1666,7 +1481,9 @@ view SCAN1_TCODE_P07_ROLE_SINGLE as
     //SCAN 3 -------------------------------------------------------------------------------------------------------------------------------------------------
 
     //------------------------------------------------------------------------------------------------------
-
+	//This view provides a count of the number of activities within a test.  
+	//This is to be used in in scan 3 to identify where an object has the correct number of activity matches within a test for a match to occur. 
+    
     view SCAN3_P01_TEST_COUNT as
         select from TEST_ACTIVITY as TEST_ACTIVITY distinct
         {
@@ -1677,7 +1494,7 @@ view SCAN1_TCODE_P07_ROLE_SINGLE as
             TEST_ACTIVITY.TST_ID;
 
     //------------------------------------------------------------------------------------------------------
-
+	//This view joins SCAN2_P04 and TEST_ACTIVITY on ACT_ID producing a list of activity matches with the activities corresponding test assigned against each record. 
 
     view SCAN3_P02_ACT_DISTINCT as
         select from SCAN2_P04_FULL as SCAN2
@@ -1700,7 +1517,8 @@ view SCAN1_TCODE_P07_ROLE_SINGLE as
 
 
     //------------------------------------------------------------------------------------------------------
-
+	//This view performs a count on ACT_ID from SCAN3_P02 to then provide a count to be compared to SCAN3_P01 to identify test matches. 
+	
     view SCAN3_P03_ACT_COUNT as
         select from SCAN3_P02_ACT_DISTINCT as P2 distinct
         {
@@ -1717,7 +1535,8 @@ view SCAN1_TCODE_P07_ROLE_SINGLE as
             P2.OBJECT_SUB_TYPE;
 
     //------------------------------------------------------------------------------------------------------
-
+	//This view joins SCAN3_P03 and SCAN3_P01 on TST_ID and activity count to produce all object test matches. 
+	
     view SCAN3_P04_MATCH as
         select from SCAN3_P03_ACT_COUNT as P3
         join (
