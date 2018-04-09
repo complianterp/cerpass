@@ -435,7 +435,7 @@ context scan {
 
     //------------------------------------------------------------------------------------------------------
 		/*This view is a UNION of SCAN1_AUTH_P04_AND_VALUE_TRUE and SCAN1_AUTH_P05_OR_VALUE_TRUE to produce a full list of value matches.*/
-	view SCAN1_AUTH_P06TEST_UNION_VALUE_TRUE as
+	view SCAN1_AUTH_P06_UNION_VALUE_TRUE as
 		select from SCAN1_AUTH_P04_AND_VALUE_TRUE as P4
 			distinct{
 			P4.OBJCT,
@@ -463,49 +463,6 @@ context scan {
             P5.AUTH_FIELD,
             P5.LOGIC_OPERATOR
 		};
-   
-    /*view SCAN1_AUTH_P06_UNION_VALUE_TRUE as
-        select from SCAN1_AUTH_P03_AND_VALUE_COUNT as P3
-        join (
-                    SCAN1_AUTH_P02_AUTH_AND_VALUE_COUNT as P2
-        )                                                     on
-                P2.COUNT_OF_AUTH_VALUES = P3.COUNT_OF_AUTH_VALUES
-            and P2.AUTH_FIELD           = P3.AUTH_FIELD
-            and P2.OBJECT               = P3.OBJECT
-            and P2.GROUP_NUMBER         = P3.GROUP_NUMBER
-            and P2.ACT_ID               = P3.ACT_ID
-        {
-            P3.OBJCT,
-            P3.AUTH,
-            P3.FIELD,
-            P3.VON,
-            P3.BIS,
-            P3.ACT_ID,
-            P3.GROUP_NUMBER,
-            P3.OBJECT,
-            P3.AUTH_FIELD,
-            P3.LOGIC_OPERATOR
-        }
-    union
-        select from SCAN1_AUTH_P01_ALL_MATCHES as P1
-        {
-            P1.OBJCT,
-            P1.AUTH,
-            P1.FIELD,
-            P1.VON,
-            P1.BIS,
-            P1.ACT_ID,
-            P1.GROUP_NUMBER,
-            P1.OBJECT,
-            P1.AUTH_FIELD,
-            P1.LOGIC_OPERATOR
-        }
-        where
-            (
-                (
-                    (P1.LOGIC_OPERATOR) = '2'
-                )
-            );*/
 
     //------------------------------------------------------------------------------------------------------
 		/*This view produces a list of distinct AUTH_FIELD values from ACT_AUTH to then perform a count on the AUTH_FIELD field.*/
