@@ -265,5 +265,41 @@ context masterdata {
             TO_TESTS            : association[1] to TESTS            on TO_TESTS.TST_ID = TST_ID; /*IN*/
             TO_BUSINESS_CONTROL : association[1] to BUSINESS_CONTROL on TO_BUSINESS_CONTROL.BC_ID = BC_ID; /*IN*/
     };
-
+    
+    @OData.publish : true
+    view ACT_LIST as
+        select from ACTIVITY as ACTIVITY
+        left outer join (
+                    RULE_SET as RULE_SET
+        )                                          on
+            ACTIVITY.RS_ID = RULE_SET.RS_ID
+        left outer join (
+                    MODULE as MODULE
+        )                                          on
+            ACTIVITY.MODULE_ID = MODULE.MODULE_ID
+        left outer join (
+                    SUB_MODULE as SUB_MODULE
+        )                                          on
+            ACTIVITY.SUB_MODULE_ID = SUB_MODULE.SUB_MODULE_ID
+        left outer join (
+                    PROCESSES as PROCESSES
+        )                                          on
+            ACTIVITY.PROCESS_ID = PROCESSES.PROCESS_ID
+        left outer join (
+                    SUB_PROCESSES as SUB_PROCESSES
+        )                                          on
+            ACTIVITY.SUB_PROCESS_ID = SUB_PROCESSES.PROCESS_ID
+        distinct {
+        ACTIVITY.ACT_ID,
+        ACTIVITY.ACT_NAME,
+        RULE_SET.RS_NAME,
+        ACTIVITY.ACTIVE,
+        ACTIVITY.SEVERITY,
+        MODULE.MODULE_NAME,
+        SUB_MODULE.SUB_MODULE_NAME,
+        ACTIVITY.OWNER,
+        PROCESSES.PROCESS_NAME,
+        SUB_PROCESSES.SUB_PROCESS_NAME,
+        ACTIVITY.WORKFLOW_FLAG
+        };
 };

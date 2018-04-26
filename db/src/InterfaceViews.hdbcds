@@ -1,0 +1,71 @@
+namespace cerpass.db;
+
+using cerpass.db :: masterdata.MODULE;
+using cerpass.db :: masterdata.SUB_MODULE;
+using cerpass.db :: masterdata.PROCESSES;
+using cerpass.db :: masterdata.SUB_PROCESSES;
+using cerpass.db :: masterdata.CUSTOMERS;
+using cerpass.db :: masterdata.LOGICAL_SYSTEMS;
+using cerpass.db :: masterdata.USERS;
+using cerpass.db :: masterdata.RULE_SET;
+using cerpass.db :: masterdata.ACTIVITY;
+using cerpass.db :: masterdata.ACT_TCODE; //In Use
+using cerpass.db :: masterdata.ACT_AUTH; //In Use
+using cerpass.db :: masterdata.TESTS;
+using cerpass.db :: masterdata.TEST_ACTIVITY;
+using cerpass.db :: masterdata.RISKS;
+using cerpass.db :: masterdata.RISK_RATING;
+using cerpass.db :: masterdata.RISK_TEST;
+using cerpass.db :: masterdata.BUSINESS_CONTROL;
+using cerpass.db :: masterdata.TESTS_BUSINESS_CONTROL;
+using cerpass.db :: sapdata.TSTC;
+using cerpass.db :: sapdata.TOBJT;
+using cerpass.db :: sapdata.UST12; //In Use
+using cerpass.db :: sapdata.UST10S; //In Use
+using cerpass.db :: sapdata.UST10C; //In Use
+using cerpass.db :: sapdata.USR10;
+using cerpass.db :: sapdata.AGR_1016; //In Use
+using cerpass.db :: sapdata.UST04; //In Use
+using cerpass.db :: sapdata.AGR_AGRS; //In Use
+using cerpass.db :: sapdata.USR02; //In Use
+
+@OData.publish : true
+context InterfaceViews {
+    
+    view ACT_LIST as
+        select from ACTIVITY as ACTIVITY
+        left outer join (
+                    RULE_SET as RULE_SET
+        )                                          on
+            ACTIVITY.RS_ID = RULE_SET.RS_ID
+        left outer join (
+                    MODULE as MODULE
+        )                                          on
+            ACTIVITY.MODULE_ID = MODULE.MODULE_ID
+        left outer join (
+                    SUB_MODULE as SUB_MODULE
+        )                                          on
+            ACTIVITY.SUB_MODULE_ID = SUB_MODULE.SUB_MODULE_ID
+        left outer join (
+                    PROCESSES as PROCESSES
+        )                                          on
+            ACTIVITY.PROCESS_ID = PROCESSES.PROCESS_ID
+        left outer join (
+                    SUB_PROCESSES as SUB_PROCESSES
+        )                                          on
+            ACTIVITY.SUB_PROCESS_ID = SUB_PROCESSES.PROCESS_ID
+        distinct {
+        ACTIVITY.ACT_ID,
+        ACTIVITY.ACT_NAME,
+        RULE_SET.RS_NAME,
+        ACTIVITY.ACTIVE,
+        ACTIVITY.SEVERITY,
+        MODULE.MODULE_NAME,
+        SUB_MODULE.SUB_MODULE_NAME,
+        ACTIVITY.OWNER,
+        PROCESSES.PROCESS_NAME,
+        SUB_PROCESSES.SUB_PROCESS_NAME,
+        ACTIVITY.WORKFLOW_FLAG
+        };
+       
+};
