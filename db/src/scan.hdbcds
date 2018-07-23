@@ -610,6 +610,146 @@ context scan {
             P10.COUNT_OF_AUTH_FIELD
         };
 
+
+
+
+    //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		/*This is Work In Progress*/
+
+
+
+
+    //------------------------------------------------------------------------------------------------------
+		/*This view produces a list of distinct AUTH_OBJECT values from ACT_AUTH to then perform a count on the AUTH_OBJECT field.*/
+
+    //------------------------------------------------------------------------------------------------------
+
+    view SCAN1_AUTH_P12_AUTH_OBJCT as
+        select from ACT_AUTH distinct
+        {
+            ACT_AUTH.ACT_ID,
+            ACT_AUTH.GROUP_NUMBER,
+            ACT_AUTH.OBJECT,
+            ACT_AUTH.ACTIVE
+        }
+        where
+            (
+                (
+                    (ACT_AUTH.ACTIVE) = true
+                )
+            );
+
+    //------------------------------------------------------------------------------------------------------
+			/*This view performs a count on AUTH_OBJECT from the unique list of AUTH_OBJECT values produces in SCAN1_AUTH_P00_AUTH_OBJECT.
+     	
+     		This view is required as the count field produces the field COUNT_OF_AUTH_OBJCT which provides a value to compare the AUTH matches to.
+     		The same count process is applied to the records produced from SCAN1_AUTH_P00_MATCH_OBJECT which also produces COUNT_OF_AUTH_OBJCT for
+     		each AUTH value match. These two tables are then joined on COUNT_OF_AUTH_OBJCT, GROUP_NUMBER and ACT_ID to produce a list of
+     		matches were the correct number of objects are true for an AUTH.  This caters for matches that may occur due to there being multiple objects
+     		within the group.*/
+
+
+    view SCAN1_AUTH_P00_AUTH_OBJCT_COUNT as
+        select from SCAN1_AUTH_P12_AUTH_OBJCT as P00
+        {
+            P00.ACT_ID,
+            P00.GROUP_NUMBER,
+            count(P00.OBJECT) as COUNT_OF_AUTH_OBJCT,
+            P00.ACTIVE
+        }
+        group by
+            P00.ACT_ID,
+            P00.GROUP_NUMBER,
+            P00.ACTIVE;
+
+    //------------------------------------------------------------------------------------------------------
+		/*This view produces a list of distinct OBJCT values from SCAN1_AUTH_P11_MATCH_FIELD_TRUE to then perform a count on the OBJCT field.*/
+
+
+    view SCAN1_AUTH_P00_MATCH_OBJCT as
+        select from SCAN1_AUTH_P11_MATCH_FIELD_TRUE distinct
+        {
+            AUTH,
+            ACT_ID,
+            GROUP_NUMBER,
+            OBJCT
+        };
+
+    //------------------------------------------------------------------------------------------------------
+			/*This view performs a count on OBJCT from the unique list of OBJCT values produces in SCAN1_AUTH_P00_MATCH_OBJCT.
+     	
+     		This view is required as the count field produces the field COUNT_OF_AUTH_OBJCT which provides a value to compare the AUTH matches to.
+     		The same count process is applied to the records produced from SCAN1_AUTH_P12_AUTH_OBJCT which also produces COUNT_OF_AUTH_OBJCT for
+     		each AUTH value match. These two tables are then joined on COUNT_OF_AUTH_OBJCT, GROUP_NUMBER and ACT_ID to produce a list of
+     		matches were the correct number of objects are true for an AUTH.  This caters for matches that may occur due to there being multiple objects
+     		within the one group.*/
+
+    view SCAN1_AUTH_P00_MATCH_OBJCT_COUNT as
+        select from SCAN1_AUTH_P00_MATCH_OBJCT as P00
+        {
+            P00.AUTH,
+            P00.ACT_ID,
+            P00.GROUP_NUMBER,
+            count(P00.OBJCT) as COUNT_OF_AUTH_OBJCT
+        }
+        group by
+            P00.AUTH,
+            P00.ACT_ID,
+            P00.GROUP_NUMBER;
+
+
+
+    //------------------------------------------------------------------------------------------------------
+			/*This view joins SCAN1_AUTH_P08_AUTH_FIELD_COUNT and SCAN1_AUTH_P10_MATCH_FIELD_COUNT on COUNT_OF_AUTH_FIELD,
+     		OBJECT, GROUP_NUMBER and ACT_ID.  The join on COUNT_OF_AUTH_FIELD between the two tables
+     		ensures only matches are made where all fields in the activity occur in the auth.
+     		By producing the COUNT_OF_AUTH_FIELD in both tables it provides a commonality between the two tables to
+     		compare and produce only true FIELD matches. */
+
+    view SCAN1_AUTH_P00_MATCH_OBJCT_TRUE as
+        select from SCAN1_AUTH_P00_MATCH_OBJCT_COUNT as P1
+        join (
+                    SCAN1_AUTH_P00_AUTH_OBJCT_COUNT as P2
+        )                                                   on
+                P2.COUNT_OF_AUTH_OBJCT = P1.COUNT_OF_AUTH_OBJCT
+            and P2.GROUP_NUMBER        = P1.GROUP_NUMBER
+            and P2.ACT_ID              = P1.ACT_ID
+        {
+            P1.AUTH,
+            P1.ACT_ID,
+            P1.GROUP_NUMBER,
+            P1.COUNT_OF_AUTH_OBJCT
+        };
+
+  //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	/*End of Work in Progress*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     //------------------------------------------------------------------------------------------------------
 		/*This view joins SCAN1_AUTH_P01_ALL_MATCHES, SCAN1_AUTH_P06_UNION_VALUE_TRUE and SCAN1_AUTH_P11_MATCH_FIELD_TRUE on OBJCT,
     	AUTH, ACT_ID and GROUP_NUMBER.  This provides the dill down detail for Auths for Scan 1 showing what values cause the matches to occur.
