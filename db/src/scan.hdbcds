@@ -649,7 +649,7 @@ context scan {
      		within the group.*/
 
 
-    view SCAN1_AUTH_P00_AUTH_OBJCT_COUNT as
+    view SCAN1_AUTH_P13_AUTH_OBJCT_COUNT as
         select from SCAN1_AUTH_P12_AUTH_OBJCT as P00
         {
             P00.ACT_ID,
@@ -666,7 +666,7 @@ context scan {
 		/*This view produces a list of distinct OBJCT values from SCAN1_AUTH_P11_MATCH_FIELD_TRUE to then perform a count on the OBJCT field.*/
 
 
-    view SCAN1_AUTH_P00_MATCH_OBJCT as
+    view SCAN1_AUTH_P14_MATCH_OBJCT as
         select from SCAN1_AUTH_P11_MATCH_FIELD_TRUE distinct
         {
             AUTH,
@@ -676,7 +676,7 @@ context scan {
         };
 
     //------------------------------------------------------------------------------------------------------
-			/*This view performs a count on OBJCT from the unique list of OBJCT values produces in SCAN1_AUTH_P00_MATCH_OBJCT.
+			/*This view performs a count on OBJCT from the unique list of OBJCT values produces in SCAN1_AUTH_P14_MATCH_OBJCT.
      	
      		This view is required as the count field produces the field COUNT_OF_AUTH_OBJCT which provides a value to compare the AUTH matches to.
      		The same count process is applied to the records produced from SCAN1_AUTH_P12_AUTH_OBJCT which also produces COUNT_OF_AUTH_OBJCT for
@@ -684,8 +684,8 @@ context scan {
      		matches were the correct number of objects are true for an AUTH.  This caters for matches that may occur due to there being multiple objects
      		within the one group.*/
 
-    view SCAN1_AUTH_P00_MATCH_OBJCT_COUNT as
-        select from SCAN1_AUTH_P00_MATCH_OBJCT as P00
+    view SCAN1_AUTH_P15_MATCH_OBJCT_COUNT as
+        select from SCAN1_AUTH_P14_MATCH_OBJCT as P00
         {
             P00.AUTH,
             P00.ACT_ID,
@@ -706,10 +706,10 @@ context scan {
      		By producing the COUNT_OF_AUTH_FIELD in both tables it provides a commonality between the two tables to
      		compare and produce only true FIELD matches. */
 
-    view SCAN1_AUTH_P00_MATCH_OBJCT_TRUE as
-        select from SCAN1_AUTH_P00_MATCH_OBJCT_COUNT as P1
+    view SCAN1_AUTH_P16_MATCH_OBJCT_TRUE as
+        select from SCAN1_AUTH_P15_MATCH_OBJCT_COUNT as P1
         join (
-                    SCAN1_AUTH_P00_AUTH_OBJCT_COUNT as P2
+                    SCAN1_AUTH_P13_AUTH_OBJCT_COUNT as P2
         )                                                   on
                 P2.COUNT_OF_AUTH_OBJCT = P1.COUNT_OF_AUTH_OBJCT
             and P2.GROUP_NUMBER        = P1.GROUP_NUMBER
@@ -752,7 +752,7 @@ context scan {
 
     //------------------------------------------------------------------------------------------------------
 		/*This view joins SCAN1_AUTH_P01_ALL_MATCHES, SCAN1_AUTH_P06_UNION_VALUE_TRUE and SCAN1_AUTH_P11_MATCH_FIELD_TRUE on OBJCT,
-    	AUTH, ACT_ID and GROUP_NUMBER.  This provides the dill down detail for Auths for Scan 1 showing what values cause the matches to occur.
+    	AUTH, ACT_ID and GROUP_NU1MBER.  This provides the dill down detail for Auths for Scan 1 showing what values cause the matches to occur.
     	This view uses the true field auth matches from SCAN1_AUTH_P11_MATCH_FIELD_TRUE and the true values matches from SCAN1_AUTH_P06_UNION_VALUE_TRUE
     	to connect back to SCAN1_AUTH_P01_ALL_MATCHES which shows all the individual matching records.*/
 
