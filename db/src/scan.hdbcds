@@ -757,7 +757,7 @@ context scan {
     	to connect back to SCAN1_AUTH_P01_ALL_MATCHES which shows all the individual matching records.*/
 
 
-    view SCAN1_AUTH_P12_FULL as
+    view SCAN1_AUTH_P17_FULL as
         select from SCAN1_AUTH_P01_ALL_MATCHES as P1
         join (
                     SCAN1_AUTH_P06_UNION_VALUE_TRUE as P6
@@ -801,7 +801,7 @@ context scan {
     //------------------------------------------------------------------------------------------------------
 		/*This view joins the true Auth matches from SCAN1_AUTH_P11_MATCH_FIELD_TRUE to the Auths corresponding Single Profile in UST10S.*/
 
-    view SCAN1_AUTH_P13_SINGLE_PROF as
+    view SCAN1_AUTH_P18_SINGLE_PROF as
         select from SCAN1_AUTH_P11_MATCH_FIELD_TRUE as P11
         join (
                     UST10S as UST10S
@@ -820,8 +820,8 @@ context scan {
     //------------------------------------------------------------------------------------------------------
 		/*This view joins UST10C to the results of SCAN1_AUTH_P13 producing the list of composite profile matches.*/
 
-    view SCAN1_AUTH_P14_COMP_PROF as
-        select from SCAN1_AUTH_P13_SINGLE_PROF as P13
+    view SCAN1_AUTH_P19_COMP_PROF as
+        select from SCAN1_AUTH_P18_SINGLE_PROF as P13
         join (
                     UST10C as UST10C
         )                                             on
@@ -838,8 +838,8 @@ context scan {
 
     //------------------------------------------------------------------------------------------------------
 		/*This view is a Union of SCAN1_AUTH_P13 and SCAN1_AUTH_P14 creating a single output table for auth profile matches with a column identifying the type of profile.*/
-	view SCAN1_AUTH_P15_PROF_UNION as
-	select from SCAN1_AUTH_P13_SINGLE_PROF as P13
+	view SCAN1_AUTH_P20_PROF_UNION as
+	select from SCAN1_AUTH_P18_SINGLE_PROF as P13
 	    {
 	    	P13.SINGLE_PROFN "PROFN",
 	    	'SINGLE_PROF' "TYPE",
@@ -850,7 +850,7 @@ context scan {
 	    }
 UNION
 
-	select from SCAN1_AUTH_P14_COMP_PROF as P14
+	select from SCAN1_AUTH_P19_COMP_PROF as P14
 		{
 			P14.COMP_PROFN "PROFN",
 	    	'COMP_PROF' "TYPE",
@@ -864,8 +864,8 @@ UNION
     //------------------------------------------------------------------------------------------------------
 		/*This view shows the User Activity Auth matches.  This is done by joining SCAN1_AUTH_P15 to UST04.  The user type is also added into the view by joining UST04 and USR02.*/
 
-    view SCAN1_AUTH_P16_USERS as
-        select from SCAN1_AUTH_P15_PROF_UNION as P15
+    view SCAN1_AUTH_P21_USERS as
+        select from SCAN1_AUTH_P20_PROF_UNION as P15
          join (
                     UST04 as UST04
         )                                             on
@@ -888,8 +888,8 @@ UNION
 
     //------------------------------------------------------------------------------------------------------
     	/*This view shows the Auth single role matches. This is done by connecting SCAN1_AUTH_P15 to AGR_1016.*/
-	view SCAN1_AUTH_P17_ROLE_SINGLE as
-		select from SCAN1_AUTH_P15_PROF_UNION as P15
+	view SCAN1_AUTH_P22_ROLE_SINGLE as
+		select from SCAN1_AUTH_P20_PROF_UNION as P15
 		join (
 					AGR_1016 as AGR_1016
 			)on
@@ -906,8 +906,8 @@ UNION
 
     //------------------------------------------------------------------------------------------------------
 	//This view produces a list of Auth composite role matches.  This si done by joining the results of SCAN1_AUTH_P17 to AGR_AGRS.
-	view SCAN1_AUTH_P18_ROLE_COMP as
-		select from SCAN1_AUTH_P17_ROLE_SINGLE as P17
+	view SCAN1_AUTH_P23_ROLE_COMP as
+		select from SCAN1_AUTH_P22_ROLE_SINGLE as P17
 		join (
 				AGR_AGRS as AGR_AGRS
 			)on
@@ -926,8 +926,8 @@ UNION
     //------------------------------------------------------------------------------------------------------
     //This view is a Union of SCAN1_AUTH_P17 and SCAN1_AUTH_P18 crating a single output table for role matches with a column identifying the type of role.
 
-    view SCAN1_AUTH_P19_ROLE_UNION as
-        select from SCAN1_AUTH_P17_ROLE_SINGLE as P17 distinct
+    view SCAN1_AUTH_P24_ROLE_UNION as
+        select from SCAN1_AUTH_P22_ROLE_SINGLE as P17 distinct
         {
     P17.AGR_NAME,
     'SINGLE_ROLE' "TYPE",
@@ -937,7 +937,7 @@ UNION
     P17.GROUP_NUMBER
         }
     union
-        select from SCAN1_AUTH_P18_ROLE_COMP as P18   distinct
+        select from SCAN1_AUTH_P23_ROLE_COMP as P18   distinct
         {
     P18.AGR_NAME,
     'COMP_ROLE' "TYPE",
@@ -952,8 +952,8 @@ UNION
 	//of all profile, user and role auth matches, providing in one view all the objects that have an activity auth match.  
 	//The column OBJECT_TYPE has been added to identify the type of object for each record.  The column OBJECT_SUB_TYPE has 
 	//been pulled from the type column in the source views to provide the object sub type for each record. 
-    view SCAN1_AUTH_P20_ALL as
-        select from SCAN1_AUTH_P15_PROF_UNION as P15 distinct
+    view SCAN1_AUTH_P25_ALL as
+        select from SCAN1_AUTH_P20_PROF_UNION as P15 distinct
         {
             P15.PROFN "OBJECT_ID",
             'PROF' "OBJECT_TYPE",
@@ -964,7 +964,7 @@ UNION
             P15.GROUP_NUMBER
         }
     union
-        select from SCAN1_AUTH_P16_USERS as P16      distinct
+        select from SCAN1_AUTH_P21_USERS as P16      distinct
         {
             P16.BNAME "OBJECT_ID",
             'USER' "OBJECT_TYPE",
@@ -975,7 +975,7 @@ UNION
             P16.GROUP_NUMBER
         }
     union
-        select from SCAN1_AUTH_P19_ROLE_UNION as P19 distinct
+        select from SCAN1_AUTH_P24_ROLE_UNION as P19 distinct
         {
             P19.AGR_NAME "OBJECT_ID",
             'ROLE' "OBJECT_TYPE",
@@ -1489,7 +1489,7 @@ UNION
     view SCAN2_P01_USER_ACT as
         select from SCAN2_P00_ACT_ALL as ACT_ALL
         left outer join (
-                    SCAN1_AUTH_P16_USERS as P16
+                    SCAN1_AUTH_P21_USERS as P16
         )                                      on
                 ACT_ALL.ACT_ID       = P16.ACT_ID
             and ACT_ALL.GROUP_NUMBER = P16.GROUP_NUMBER
@@ -1521,7 +1521,7 @@ UNION
     view SCAN2_P02_PROF_ACT as
         select from SCAN2_P00_ACT_ALL as ACT_ALL
         left outer join (
-                    SCAN1_AUTH_P15_PROF_UNION as P15
+                    SCAN1_AUTH_P20_PROF_UNION as P15
         )                                      on
                 ACT_ALL.ACT_ID       = P15.ACT_ID
             and ACT_ALL.GROUP_NUMBER = P15.GROUP_NUMBER
@@ -1553,7 +1553,7 @@ UNION
     view SCAN2_P03_ROLE_ACT as
         select from SCAN2_P00_ACT_ALL as ACT_ALL
         left outer join (
-                    SCAN1_AUTH_P19_ROLE_UNION as P19
+                    SCAN1_AUTH_P24_ROLE_UNION as P19
         )                                             on
                 ACT_ALL.ACT_ID       = P19.ACT_ID
             and ACT_ALL.GROUP_NUMBER = P19.GROUP_NUMBER
