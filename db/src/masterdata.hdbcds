@@ -176,6 +176,9 @@ context masterdata {
     entity TEST_ACTIVITY {
         key TST_ID      : String(10) not null; /*ASSOCIATION*/
         key ACT_ID      : String(10) not null; /*ASSOCIATION*/
+        key	TCODE_VON		: String(20) not null;
+        	TCODE_BIS		: String(20);
+        key	GROUP_NUMBER : Integer    not null;
             TO_TESTS    : association[1] to TESTS    on TO_TESTS.TST_ID = TST_ID; /*IN*/
             TO_ACTIVITY : association[1] to ACTIVITY on TO_ACTIVITY.ACT_ID = ACT_ID; /*IN*/
 
