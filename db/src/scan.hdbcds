@@ -611,14 +611,6 @@ context scan {
         };
 
 
-
-
-    //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-		/*This is Work In Progress*/
-
-
-
-
     //------------------------------------------------------------------------------------------------------
 		/*This view produces a list of distinct AUTH_OBJECT values from ACT_AUTH to then perform a count on the AUTH_OBJECT field.*/
 
@@ -720,34 +712,6 @@ context scan {
             P15.GROUP_NUMBER,
             P15.COUNT_OF_AUTH_OBJCT
         };
-
-  //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-	/*End of Work in Progress*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     //------------------------------------------------------------------------------------------------------
@@ -1611,6 +1575,212 @@ UNION
     //SCAN 3 -------------------------------------------------------------------------------------------------------------------------------------------------
 
     //------------------------------------------------------------------------------------------------------
+	
+	
+	
+	
+	//Work in Progress
+	
+	//Connects all OBJECT activty TCODE matches back to their TCODES 
+    view SCAN3_P01_TCODE_MATCH_ALL as
+        select from SCAN1_TCODE_P10_ALL as P10
+        join (
+                    SCAN1_TCODE_P01_ALL_MATCHES as P01
+        )                                          on
+            P10.AUTH = P01.AUTH
+            and P10.ACT_ID = P01.ACT_ID
+            and P10.GROUP_NUMBER = P01.GROUP_NUMBER
+        distinct
+        {
+           P01.ACT_ID,
+           P01.GROUP_NUMBER,
+           P10.OBJECT_ID,
+           P10.TYPE,
+           P10.SUB_TYPE,
+           P10.OBJCT,
+           P01.TCODE_VON,
+           P01.TCODE_VON_WILD_CARD,
+           P01.TCODE_BIS
+        };
+		
+		//Ensures only the tcodes matches that are part of a match where the auth is also true are only displayed. 
+		view SCAN3_P02_TCODE_MATCH_ONLY as
+        select from SCAN3_P01_TCODE_MATCH_ALL as TCODE_ALL
+        join (
+                    SCAN2_P04_FULL as P04
+        )                                          on
+					TCODE_ALL.ACT_ID = P04.ACT_ID
+					and TCODE_ALL.GROUP_NUMBER = P04.GROUP_NUMBER
+					and TCODE_ALL.OBJECT_ID = P04.OBJECT_ID
+				distinct
+				{
+				P04.ACT_ID,
+				P04.GROUP_NUMBER,
+				P04.OBJECT_ID,
+				P04.OBJECT_TYPE,
+				P04.OBJECT_SUB_TYPE,
+				TCODE_ALL.TCODE_VON,
+				TCODE_ALL.TCODE_VON_WILD_CARD,
+				TCODE_ALL.TCODE_BIS
+				};
+	
+	//Brings the test activity data into the view for analysis. 
+	view SCAN3_P03_TCODE_ACTIVITY_RISK_TCODE as
+	select from TEST_ACTIVITY as TEST_ACTIVITY
+	join (
+				SCAN3_P02_TCODE_MATCH_ONLY as P00
+				)								on
+				TEST_ACTIVITY.ACT_ID = P00.ACT_ID
+				and TEST_ACTIVITY.TCODE_VON = P00.TCODE_VON
+			distinct
+			{
+			TEST_ACTIVITY.TST_ID,
+			TEST_ACTIVITY.ACT_ID,
+			TEST_ACTIVITY.GROUP_NUMBER,
+			P00.OBJECT_ID,
+			P00.OBJECT_TYPE,
+			P00.OBJECT_SUB_TYPE,
+			P00.TCODE_VON,
+			P00.TCODE_BIS
+			};
+	
+	
+		//Performs a count on tcode to be compared to a count perofrmed on tcode on the test activity table. 
+	    view SCAN3_P04_TCODE_ACTIVITY_RISK_TCODE_COUNT as
+        select from SCAN3_P03_TCODE_ACTIVITY_RISK_TCODE as P00
+        {
+            P00.TST_ID,
+			P00.ACT_ID,
+			P00.GROUP_NUMBER,
+			P00.OBJECT_ID,
+			P00.OBJECT_TYPE,
+			P00.OBJECT_SUB_TYPE,
+			count(P00.TCODE_VON) as TCODE_COUNT
+        }
+        group by
+            P00.TST_ID,
+			P00.ACT_ID,
+			P00.GROUP_NUMBER,
+			P00.OBJECT_ID,
+			P00.OBJECT_TYPE,
+			P00.OBJECT_SUB_TYPE;
+	
+	
+	
+		//Provides a count of TCODE on TEST activity to compare the count from SCAN3_P04_TCODE_ACTIVITY_RISK_TCODE_COUNT to
+		view SCAN3_P05_TEST_ACTIVITY_TCODE_COUNT as 
+		select from TEST_ACTIVITY as TEST_ACTIVITY
+		{
+		TEST_ACTIVITY.TST_ID,
+		TEST_ACTIVITY.ACT_ID,
+		TEST_ACTIVITY.GROUP_NUMBER,
+		count(TEST_ACTIVITY.TCODE_VON) as TCODE_COUNT
+		}
+		group by 
+			TEST_ACTIVITY.TST_ID,
+			TEST_ACTIVITY.ACT_ID,
+			TEST_ACTIVITY.GROUP_NUMBER;
+	
+		//Matches the two TCODE count tables to produce a list of records that have the correct number of TCODEs in the test activity group. 
+		view SCAN3_P06_TCODE_COUNT_MATCH as
+		select from SCAN3_P04_TCODE_ACTIVITY_RISK_TCODE_COUNT as P01
+		join (
+				SCAN3_P05_TEST_ACTIVITY_TCODE_COUNT as P02
+				)	on
+				P01.TST_ID = P02.TST_ID
+				and P01.ACT_ID = P02.ACT_ID
+				and P01.GROUP_NUMBER = P02.GROUP_NUMBER
+				and P01.TCODE_COUNT = P02.TCODE_COUNT
+			{
+			P01.TST_ID,
+			P01.ACT_ID,
+			P01.GROUP_NUMBER,
+			P01.OBJECT_ID,
+			P01.OBJECT_TYPE,
+			P01.OBJECT_SUB_TYPE
+			};
+			
+			
+			
+		//Performs a count of number of activities per group in a test to compare to a count performed on the maches.
+		view SCAN3_P07_TEST_ACTIVITY_GROUP_ACT_COUNT as
+		select from TEST_ACTIVITY as TEST_ACTIVITY
+		{
+		TEST_ACTIVITY.TST_ID,
+		TEST_ACTIVITY.GROUP_NUMBER,
+		count(TEST_ACTIVITY.ACT_ID) as ACT_COUNT
+		}
+		group by
+		TEST_ACTIVITY.TST_ID,
+		TEST_ACTIVITY.GROUP_NUMBER;
+		
+		//Performs a count of the number of activities per goup in the match results per test and gorup. 
+		view SCAN3_P08_TCODE_COUNT_MATCH_ACT_COUNT as
+		select from SCAN3_P06_TCODE_COUNT_MATCH as P00
+		{
+			P00.TST_ID,
+			P00.GROUP_NUMBER,
+			P00.OBJECT_ID,
+			P00.OBJECT_TYPE,
+			P00.OBJECT_SUB_TYPE,
+			count(P00.ACT_ID) as ACT_COUNT
+		}
+		group by
+			P00.TST_ID,
+			P00.GROUP_NUMBER,
+			P00.OBJECT_ID,
+			P00.OBJECT_TYPE,
+			P00.OBJECT_SUB_TYPE;
+			
+		
+		view SCAN3_P09_ACT_COUNT_MATCH as
+		select from SCAN3_P08_TCODE_COUNT_MATCH_ACT_COUNT as P01
+		join (
+				SCAN3_P07_TEST_ACTIVITY_GROUP_ACT_COUNT as P02
+				) on
+				P01.TST_ID = P02.TST_ID
+				and P01.GROUP_NUMBER = P02.GROUP_NUMBER
+				and P01.ACT_COUNT = P02.ACT_COUNT
+			{
+			P01.TST_ID,
+			P01.GROUP_NUMBER,
+			P01.OBJECT_ID,
+			P01.OBJECT_TYPE,
+			P01.OBJECT_SUB_TYPE
+			};
+			
+		VIEW SCAN3_P10_ACT_MATCH_TCODE_LIST as
+		select from SCAN3_P03_TCODE_ACTIVITY_RISK_TCODE as P01
+		join (
+				SCAN3_P09_ACT_COUNT_MATCH as P02
+				) on
+				P01.TST_ID = P02.TST_ID
+				and P01.OBJECT_ID = P02.OBJECT_ID
+				and P01.OBJECT_TYPE = P02.OBJECT_TYPE
+				and P01.OBJECT_SUB_TYPE = P02.OBJECT_SUB_TYPE
+				and P01.GROUP_NUMBER = P02.GROUP_NUMBER
+				distinct
+			{
+			P01.TST_ID,
+			P01.ACT_ID,
+			P01.GROUP_NUMBER,
+			P01.OBJECT_ID,
+			P01.OBJECT_TYPE,
+			P01.OBJECT_SUB_TYPE,
+			P01.TCODE_VON,
+			P01.TCODE_BIS
+			};
+			
+			
+	//End Work in progress
+	
+	
+	
+	
+	
+	
+	
+	
 	//This view provides a count of the number of activities within a test.  
 	//This is to be used in in scan 3 to identify where an object has the correct number of activity matches within a test for a match to occur. 
     
