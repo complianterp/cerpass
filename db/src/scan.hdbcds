@@ -1053,7 +1053,7 @@ UNION
             'S_TCODE' "TCODE_OBJCT",
             A2.TCODE_VON,
             replace("TCODE_VON", '*', '%') "TCODE_VON_WILD_CARD",
-            A2.TCODE_BIS,
+            //A2.TCODE_BIS,
             A2.GROUP_NUMBER
         }
         where
@@ -1101,7 +1101,7 @@ UNION
             A2.TCODE_OBJCT,
             A2.TCODE_VON,
             A2.TCODE_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
-            A2.TCODE_BIS,
+            //A2.TCODE_BIS,
             A2.GROUP_NUMBER
         }
         where
@@ -1110,11 +1110,11 @@ UNION
                     (A2."TCODE_VON")        between A1."VON_LEFT_OF_STAR" and A1."BIS_LEFT_OF_STAR"
                 )
             )
-            or (
+            /*or (
                 (
                     (A1."VON_LEFT_OF_STAR") between A2."TCODE_VON" and A2."TCODE_BIS"
                 )
-            )
+            )*/
             or (
                 (
                     A2.TCODE_VON            =       A1.VON_LEFT_OF_STAR
@@ -1149,7 +1149,7 @@ UNION
             A2.TCODE_OBJCT,
             A2.TCODE_VON,
             A2.TCODE_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
-            A2.TCODE_BIS,
+            //A2.TCODE_BIS,
             A2.GROUP_NUMBER
         }
         where
@@ -1198,13 +1198,13 @@ UNION
             A2.TCODE_OBJCT,
             A2.TCODE_VON,
             A2.TCODE_VON_WILD_CARD, //This is the converted VON field for the fuzzy matching
-            A2.TCODE_BIS,
+            //A2.TCODE_BIS,
             A2.GROUP_NUMBER
         }
         where
             (
                     A2.TCODE_VON        like '%*%'
-                and A2.TCODE_BIS        is   null
+                //and A2.TCODE_BIS        is   null
                 and A1.VON_LEFT_OF_STAR like A2.TCODE_VON_WILD_CARD
             )
             or (
@@ -1599,8 +1599,8 @@ UNION
            P10.SUB_TYPE,
            P10.OBJCT,
            P01.TCODE_VON,
-           P01.TCODE_VON_WILD_CARD,
-           P01.TCODE_BIS
+           P01.TCODE_VON_WILD_CARD//,
+           //P01.TCODE_BIS
         };
 		
 		//Ensures only the tcodes matches that are part of a match where the auth is also true are only displayed. 
@@ -1620,8 +1620,8 @@ UNION
 				P04.OBJECT_TYPE,
 				P04.OBJECT_SUB_TYPE,
 				TCODE_ALL.TCODE_VON,
-				TCODE_ALL.TCODE_VON_WILD_CARD,
-				TCODE_ALL.TCODE_BIS
+				TCODE_ALL.TCODE_VON_WILD_CARD//,
+				//TCODE_ALL.TCODE_BIS
 				};
 	
 	//Brings the test activity data into the view for analysis. 
@@ -1640,8 +1640,8 @@ UNION
 			P00.OBJECT_ID,
 			P00.OBJECT_TYPE,
 			P00.OBJECT_SUB_TYPE,
-			P00.TCODE_VON,
-			P00.TCODE_BIS
+			P00.TCODE_VON//,
+			//P00.TCODE_BIS
 			};
 	
 	
@@ -1703,9 +1703,18 @@ UNION
 			
 			
 		//Performs a count of number of activities per group in a test to compare to a count performed on the maches.
-		view SCAN3_P07_TEST_ACTIVITY_GROUP_ACT_COUNT as
+		view SCAN3_P07_TEST_ACTIVITY_GROUP_ACT_DISTINCT as
 		select from TEST_ACTIVITY as TEST_ACTIVITY
-		{
+		distinct{
+		TEST_ACTIVITY.TST_ID,
+		TEST_ACTIVITY.GROUP_NUMBER,
+		TEST_ACTIVITY.ACT_ID
+		};
+		
+		
+		view SCAN3_P07_TEST_ACTIVITY_GROUP_ACT_COUNT as
+		select from SCAN3_P07_TEST_ACTIVITY_GROUP_ACT_DISTINCT as TEST_ACTIVITY
+		distinct{
 		TEST_ACTIVITY.TST_ID,
 		TEST_ACTIVITY.GROUP_NUMBER,
 		count(TEST_ACTIVITY.ACT_ID) as ACT_COUNT
@@ -1714,9 +1723,10 @@ UNION
 		TEST_ACTIVITY.TST_ID,
 		TEST_ACTIVITY.GROUP_NUMBER;
 		
+		
 		//Performs a count of the number of activities per goup in the match results per test and gorup. 
 		view SCAN3_P08_TCODE_COUNT_MATCH_ACT_COUNT as
-		select from SCAN3_P06_TCODE_COUNT_MATCH as P00
+		select from SCAN3_P03_TCODE_ACTIVITY_RISK_TCODE as P00
 		{
 			P00.TST_ID,
 			P00.GROUP_NUMBER,
@@ -1767,8 +1777,8 @@ UNION
 			P01.OBJECT_ID,
 			P01.OBJECT_TYPE,
 			P01.OBJECT_SUB_TYPE,
-			P01.TCODE_VON,
-			P01.TCODE_BIS
+			P01.TCODE_VON//,
+			//P01.TCODE_BIS
 			};
 			
 			

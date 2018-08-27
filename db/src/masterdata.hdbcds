@@ -135,7 +135,6 @@ context masterdata {
         key ACT_ID       : String(10); /*ASSOCIATION*/
             ACTIVE       : Boolean;
         key TCODE_VON    : String(20); /*ASSOCIATION*/
-            TCODE_BIS    : String(20); /*ASSOCIATION*/
         key GROUP_NUMBER : Integer not null;
             TO_ACTIVITY  : association[1] to ACTIVITY on TO_ACTIVITY.ACT_ID = ACT_ID; /*IN*/
     };
@@ -159,10 +158,10 @@ context masterdata {
     /*@@LAYOUT{"LAYOUTINFO":{"X":-526,"Y":460.5}}*/
     entity TESTS {
         key TST_ID                    : String(10) not null;
-            TST_NAME                  : String(60) not null;
+            TST_NAME                  : String(300) not null;
         key RS_ID                     : String(10) not null; /*ASSOCIATION*/
             ACTIVE                    : Boolean;
-            DESCRIPTION               : String(1000);
+            DESCRIPTION               : String(5000);
             OWNER                     : String(60) not null; /*ASSOCIATION*/
             WORKFLOW_FLAG             : Boolean;
             TO_RULE_SET               : association[1]    to RULE_SET               on TO_RULE_SET.RS_ID = RS_ID; /*IN*/
@@ -177,7 +176,6 @@ context masterdata {
         key TST_ID      : String(10) not null; /*ASSOCIATION*/
         key ACT_ID      : String(10) not null; /*ASSOCIATION*/
         key	TCODE_VON		: String(20) not null;
-        	TCODE_BIS		: String(20);
         key	GROUP_NUMBER : Integer    not null;
             TO_TESTS    : association[1] to TESTS    on TO_TESTS.TST_ID = TST_ID; /*IN*/
             TO_ACTIVITY : association[1] to ACTIVITY on TO_ACTIVITY.ACT_ID = ACT_ID; /*IN*/
