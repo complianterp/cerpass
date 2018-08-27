@@ -13,6 +13,32 @@
   },
   "import_settings": {"import_columns": ["MODULE_ID", "MODULE_NAME"]},
   "column_mappings": {"MODULE_ID": 1, "MODULE_NAME": 2}},
+
+
+
+
+ {
+  "target_table": "cerpass.db::TEST.TEST",
+  "source_data": {
+   "data_type": "CSV",
+   "file_name": "cerpass.db.data::01module.csv",
+   "has_header": true,
+   "dialect": "HANA",
+   "type_config": {
+    "delimiter": ","
+   }
+  },
+  "import_settings": {"import_columns": ["MODULE_ID","MODULE_NAME"]},
+  "column_mappings": {"MODULE_ID": 1,"MODULE_NAME": 2}
+ }, 
+
+
+
+
+
+
+
+
 	
  
  {

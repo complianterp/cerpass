@@ -1,0 +1,10 @@
+namespace cerpass.db;
+
+@OData.publish : true
+context TEST {
+    
+    entity TEST {
+        key MODULE_ID     : String(10) not null;
+            MODULE_NAME   : String(60) not null;
+    };
+};
