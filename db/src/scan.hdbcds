@@ -1776,22 +1776,17 @@ UNION
 	
 	
 	
-	
-	
-	
-	
-	
 	//This view provides a count of the number of activities within a test.  
 	//This is to be used in in scan 3 to identify where an object has the correct number of activity matches within a test for a match to occur. 
     
-    view SCAN3_P01_TEST_COUNT as
-        select from TEST_ACTIVITY as TEST_ACTIVITY distinct
+   /* view SCAN3_P01_TEST_COUNT as
+        select from SCAN3_P00_TST_ACT_LIST as SCAN3_P00_TST_ACT_LIST distinct
         {
-            TEST_ACTIVITY.TST_ID,
-            count(TEST_ACTIVITY.ACT_ID) as ACT_COUNT
+            SCAN3_P00_TST_ACT_LIST.TST_ID,
+            count(SCAN3_P00_TST_ACT_LIST.ACT_ID) as ACT_COUNT
         }
         group by
-            TEST_ACTIVITY.TST_ID;
+            SCAN3_P00_TST_ACT_LIST.TST_ID;
 
     //------------------------------------------------------------------------------------------------------
 	//This view joins SCAN2_P04 and TEST_ACTIVITY on ACT_ID producing a list of activity matches with the activities corresponding test assigned against each record. 
@@ -1851,4 +1846,5 @@ UNION
             P3.OBJECT_TYPE,
             P3.OBJECT_SUB_TYPE
         };
+        */
 };
