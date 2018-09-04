@@ -98,6 +98,7 @@ context masterdata {
             TO_CUSTOMER         : association[1]    to CUSTOMERS        on TO_CUSTOMER.CUST_ID = CUST_ID; /*IN*/
             TO_USERS            : association[1]    to USERS            on TO_USERS.USER_ID = OWNER; /*IN*/
             TO_ACTIVITY         : association[0..*] to ACTIVITY         on TO_ACTIVITY.RS_ID = RS_ID; /*OUT*/
+            TO_ACT_GROUP		:association[0..*] to ACT_GROUP			on TO_ACT_GROUP.RS_ID = RS_ID;/*OUT*/
             TO_ACT_TCODE        : association[0..*] to ACT_TCODE         on TO_ACT_TCODE.RS_ID = RS_ID; /*OUT*/
             TO_ACT_AUTH        : association[0..*] to ACT_AUTH         on TO_ACT_AUTH.RS_ID = RS_ID; /*OUT*/
             TO_TESTS            : association[0..*] to TESTS            on TO_TESTS.RS_ID = RS_ID; /*OUT*/
@@ -127,10 +128,20 @@ context masterdata {
             TO_USERS         : association[1]    to USERS         on TO_USERS.USER_ID = OWNER; /*IN*/
             TO_PROCESSES     : association[1]    to PROCESSES     on TO_PROCESSES.PROCESS_ID = PROCESS_ID; /*IN*/
             TO_SUB_PROCESSES : association[1]    to SUB_PROCESSES on TO_SUB_PROCESSES.SUB_PROCESS_ID = SUB_PROCESS_ID; /*IN*/
+            TO_ACT_GROUP	:association[0..*]	to ACT_GROUP on TO_ACT_GROUP.ACT_ID = ACT_ID;/*OUT*/
             TO_ACT_TCODE     : association[0..*] to ACT_TCODE     on TO_ACT_TCODE.ACT_ID = ACT_ID; /*OUT*/
             TO_ACT_AUTH      : association[0..*] to ACT_AUTH      on TO_ACT_AUTH.ACT_ID = ACT_ID; /*OUT*/
             TO_TEST_ACTIVITY : association[0..*] to TEST_ACTIVITY on TO_TEST_ACTIVITY.ACT_ID = ACT_ID; /*OUT*/
     };
+
+	entity ACT_GROUP{
+		key RS_ID			: String(10) not null;/*ASSOCIATION*/
+		key ACT_ID			: String(10) not null;/*ASSOCIATION*/
+		key GROUP_NUMBER	: Integer not null;
+			GROUP_NAME		: String(60);
+			TO_RULE_SET		:association[1] to RULE_SET on TO_RULE_SET.RS_ID = RS_ID;/*IN*/
+			TO_ACTIVITY		:association[1] to ACTIVITY on TO_ACTIVITY.ACT_ID = ACT_ID;/*IN*/
+	};
 
     /*@@LAYOUT{"LAYOUTINFO":{"X":877,"Y":264.5}}*/
     entity ACT_TCODE {
