@@ -98,6 +98,8 @@ context masterdata {
             TO_CUSTOMER         : association[1]    to CUSTOMERS        on TO_CUSTOMER.CUST_ID = CUST_ID; /*IN*/
             TO_USERS            : association[1]    to USERS            on TO_USERS.USER_ID = OWNER; /*IN*/
             TO_ACTIVITY         : association[0..*] to ACTIVITY         on TO_ACTIVITY.RS_ID = RS_ID; /*OUT*/
+            TO_ACT_TCODE        : association[0..*] to ACT_TCODE         on TO_ACT_TCODE.RS_ID = RS_ID; /*OUT*/
+            TO_ACT_AUTH        : association[0..*] to ACT_AUTH         on TO_ACT_AUTH.RS_ID = RS_ID; /*OUT*/
             TO_TESTS            : association[0..*] to TESTS            on TO_TESTS.RS_ID = RS_ID; /*OUT*/
             TO_RISKS            : association[0..*] to RISKS            on TO_RISKS.RS_ID = RS_ID; /*OUT*/
             TO_RISK_RATING      : association[0..*] to RISK_RATING      on TO_RISK_RATING.RS_ID = RS_ID; /*OUT*/
@@ -132,15 +134,18 @@ context masterdata {
 
     /*@@LAYOUT{"LAYOUTINFO":{"X":877,"Y":264.5}}*/
     entity ACT_TCODE {
+    	key RS_ID		: String(10) not null; /*ASSOCIATION*/
         key ACT_ID       : String(10); /*ASSOCIATION*/
             ACTIVE       : Boolean;
         key TCODE_VON    : String(20); /*ASSOCIATION*/
         key GROUP_NUMBER : Integer not null;
             TO_ACTIVITY  : association[1] to ACTIVITY on TO_ACTIVITY.ACT_ID = ACT_ID; /*IN*/
+            TO_RULE_SET      : association[1]    to RULE_SET      on TO_RULE_SET.RS_ID = RS_ID; /*IN*/
     };
 
     /*@@LAYOUT{"LAYOUTINFO":{"X":927,"Y":511.5}}*/
     entity ACT_AUTH {
+        key RS_ID			: String(10) not null; /*ASSOCIATION*/
         key ACT_ID          : String(10) not null; /*ASSOCIATION*/
         key GROUP_NUMBER    : Integer    not null;
         key OBJECT          : String(60) not null; /*ASSOCIATION*/
@@ -150,6 +155,7 @@ context masterdata {
             LOGIC_OPERATOR  : Integer    not null;
             ACTIVE          : Boolean;
             TO_ACTIVITY     : association[1] to ACTIVITY on TO_ACTIVITY.ACT_ID = ACT_ID; /*IN*/
+            TO_RULE_SET		: association[1] to RULE_SET on TO_RULE_SET.RS_ID = RS_ID;
             //TO_TOBJT        : association[1] to TOBJT    on TO_TOBJT.OBJECT = OBJECT; /*IN*/
 
     };
