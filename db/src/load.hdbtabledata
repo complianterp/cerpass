@@ -256,8 +256,8 @@
     "delimiter": ","
    }
   },
-  "import_settings": {"import_columns": ["TST_ID","ACT_ID", "TCODE_VON", "GROUP_NUMBER"]},
-  "column_mappings": {"TST_ID": 1,"ACT_ID": 2, "TCODE_VON": 3, "GROUP_NUMBER": 4}
+  "import_settings": {"import_columns": ["RS_ID","TST_ID","ACT_ID", "TCODE_VON", "GROUP_NUMBER"]},
+  "column_mappings": {"RS_ID": 1,"TST_ID": 2,"ACT_ID": 3, "TCODE_VON": 4, "GROUP_NUMBER": 5}
  }, 
 
 
