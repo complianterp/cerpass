@@ -375,9 +375,34 @@ context scan {
                 )
             );*/
 
-    view SCAN1_AUTH_P03_AND_VALUE_COUNT as
+    
+    view SCAN1_AUTH_P03_MATCH_DISTINCT as
         select from SCAN1_AUTH_P01_ALL_MATCHES as P1
-        {
+        distinct {
+            P1.OBJCT,
+            P1.AUTH,
+            P1.FIELD,
+            //P1.VON,
+            //P1.BIS,
+            P1.ACT_ID,
+            P1.GROUP_NUMBER,
+            P1.OBJECT,
+            P1.AUTH_FIELD,
+            P1.AUTH_VALUES_VON,
+            P1.AUTH_VALUES_BIS,
+            P1.LOGIC_OPERATOR
+        }
+         where
+            (
+                (
+                    (P1.LOGIC_OPERATOR) = 1
+                )
+            );
+    
+    
+    view SCAN1_AUTH_P03_AND_VALUE_COUNT as
+        select from SCAN1_AUTH_P03_MATCH_DISTINCT as P1
+        distinct {
             P1.OBJCT,
             P1.AUTH,
             P1.FIELD,
@@ -400,13 +425,7 @@ context scan {
             P1.GROUP_NUMBER,
             P1.OBJECT,
             P1.AUTH_FIELD,
-            P1.LOGIC_OPERATOR
-        having
-            (
-                (
-                    (P1.LOGIC_OPERATOR) = 1
-                )
-            );
+            P1.LOGIC_OPERATOR;
 
     //------------------------------------------------------------------------------------------------------
 			/*This view joins SCAN1_AUTH_P02_AUTH_AND_VALUE_COUNT and SCAN1_AUTH_P03_AND_VALUE_COUNT on COUNT_OF_AUTH_VALUES,
@@ -420,8 +439,8 @@ context scan {
         join (
                     SCAN1_AUTH_P02_AUTH_AND_VALUE_COUNT as P2
         )                                                     on
-                P2.COUNT_OF_AUTH_VALUES = P3.COUNT_OF_AUTH_VALUES
-            and P2.AUTH_FIELD           = P3.AUTH_FIELD
+                //P2.COUNT_OF_AUTH_VALUES = P3.COUNT_OF_AUTH_VALUES
+            /*and*/ P2.AUTH_FIELD           = P3.AUTH_FIELD
             and P2.OBJECT               = P3.OBJECT
             and P2.GROUP_NUMBER         = P3.GROUP_NUMBER
             and P2.ACT_ID               = P3.ACT_ID
@@ -435,9 +454,11 @@ context scan {
             P3.GROUP_NUMBER,
             P3.OBJECT,
             P3.AUTH_FIELD,
-            P2.COUNT_OF_AUTH_VALUES,
+            P2.COUNT_OF_AUTH_VALUES as "ACT_COUNT",
+            P3.COUNT_OF_AUTH_VALUES as "MATCH_COUNT",
             P3.LOGIC_OPERATOR
-        };
+        }
+        Where P3.COUNT_OF_AUTH_VALUES >= P2.COUNT_OF_AUTH_VALUES;
 
     //------------------------------------------------------------------------------------------------------
 		/*This view produces all value matches where the logical operator is OR.  This is any record in
@@ -598,8 +619,8 @@ context scan {
         join (
                     SCAN1_AUTH_P08_AUTH_FIELD_COUNT as P8
         )                                                   on
-                P8.COUNT_OF_AUTH_FIELD = P10.COUNT_OF_AUTH_FIELD
-            and P8.OBJECT              = P10.OBJECT
+                //P8.COUNT_OF_AUTH_FIELD = P10.COUNT_OF_AUTH_FIELD
+            /*and*/ P8.OBJECT              = P10.OBJECT
             and P8.GROUP_NUMBER        = P10.GROUP_NUMBER
             and P8.ACT_ID              = P10.ACT_ID
         {
@@ -607,8 +628,10 @@ context scan {
             P10.AUTH,
             P10.ACT_ID,
             P10.GROUP_NUMBER,
-            P10.COUNT_OF_AUTH_FIELD
-        };
+            P8.COUNT_OF_AUTH_FIELD as "AUTH_COUNT_OF_AUTH_FIELD",
+            P10.COUNT_OF_AUTH_FIELD as "MATCH_COUNT_OF_AUTH_FIELD"
+        }
+        where P10.COUNT_OF_AUTH_FIELD >= P8.COUNT_OF_AUTH_FIELD;
 
 
     //------------------------------------------------------------------------------------------------------
