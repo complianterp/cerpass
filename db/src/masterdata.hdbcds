@@ -1,13 +1,5 @@
 namespace cerpass.db;
 
-//using cerpass.db::sapdata.TSTC;
-//using cerpass.db::sapdata.TOBJT;//In Use
-//using cerpass.db::sapdata.UST12;
-//using cerpass.db::sapdata.UST10S;
-//using cerpass.db::sapdata.UST10C;
-//using cerpass.db::sapdata.USR10;
-//using cerpass.db::sapdata.AGR_1016;
-
 @OData.publish : true
 context masterdata {
 
@@ -98,12 +90,12 @@ context masterdata {
             TO_CUSTOMER         : association[1]    to CUSTOMERS        on TO_CUSTOMER.CUST_ID = CUST_ID; /*IN*/
             TO_USERS            : association[1]    to USERS            on TO_USERS.USER_ID = OWNER; /*IN*/
             TO_ACTIVITY         : association[0..*] to ACTIVITY         on TO_ACTIVITY.RS_ID = RS_ID; /*OUT*/
-            TO_ACT_GROUP		:association[0..*] to ACT_GROUP			on TO_ACT_GROUP.RS_ID = RS_ID;/*OUT*/
-            TO_ACT_TCODE        : association[0..*] to ACT_TCODE         on TO_ACT_TCODE.RS_ID = RS_ID; /*OUT*/
-            TO_ACT_AUTH     	: association[0..*] to ACT_AUTH         on TO_ACT_AUTH.RS_ID = RS_ID; /*OUT*/
+            TO_ACT_GROUP        : association[0..*] to ACT_GROUP        on TO_ACT_GROUP.RS_ID = RS_ID; /*OUT*/
+            TO_ACT_TCODE        : association[0..*] to ACT_TCODE        on TO_ACT_TCODE.RS_ID = RS_ID; /*OUT*/
+            TO_ACT_AUTH         : association[0..*] to ACT_AUTH         on TO_ACT_AUTH.RS_ID = RS_ID; /*OUT*/
             TO_TESTS            : association[0..*] to TESTS            on TO_TESTS.RS_ID = RS_ID; /*OUT*/
-            TO_TESTS_GROUP      : association[0..*] to TESTS_GROUP            on TO_TESTS_GROUP.RS_ID = RS_ID; /*OUT*/
-            TO_TEST_ACTIVITY	: association[0..*] to TEST_ACTIVITY	on TO_TEST_ACTIVITY.RS_ID = RS_ID; /*OUT*/
+            TO_TESTS_GROUP      : association[0..*] to TESTS_GROUP      on TO_TESTS_GROUP.RS_ID = RS_ID; /*OUT*/
+            TO_TEST_ACTIVITY    : association[0..*] to TEST_ACTIVITY    on TO_TEST_ACTIVITY.RS_ID = RS_ID; /*OUT*/
             TO_RISKS            : association[0..*] to RISKS            on TO_RISKS.RS_ID = RS_ID; /*OUT*/
             TO_RISK_RATING      : association[0..*] to RISK_RATING      on TO_RISK_RATING.RS_ID = RS_ID; /*OUT*/
             TO_RISK_TEST        : association[0..*] to RISK_TEST        on TO_RISK_TEST.RS_ID = RS_ID; /*OUT*/
@@ -130,35 +122,35 @@ context masterdata {
             TO_USERS         : association[1]    to USERS         on TO_USERS.USER_ID = OWNER; /*IN*/
             TO_PROCESSES     : association[1]    to PROCESSES     on TO_PROCESSES.PROCESS_ID = PROCESS_ID; /*IN*/
             TO_SUB_PROCESSES : association[1]    to SUB_PROCESSES on TO_SUB_PROCESSES.SUB_PROCESS_ID = SUB_PROCESS_ID; /*IN*/
-            TO_ACT_GROUP	:association[0..*]	to ACT_GROUP on TO_ACT_GROUP.ACT_ID = ACT_ID;/*OUT*/
+            TO_ACT_GROUP     : association[0..*] to ACT_GROUP     on TO_ACT_GROUP.ACT_ID = ACT_ID; /*OUT*/
             TO_ACT_TCODE     : association[0..*] to ACT_TCODE     on TO_ACT_TCODE.ACT_ID = ACT_ID; /*OUT*/
             TO_ACT_AUTH      : association[0..*] to ACT_AUTH      on TO_ACT_AUTH.ACT_ID = ACT_ID; /*OUT*/
             TO_TEST_ACTIVITY : association[0..*] to TEST_ACTIVITY on TO_TEST_ACTIVITY.ACT_ID = ACT_ID; /*OUT*/
     };
 
-	entity ACT_GROUP{
-		key RS_ID			: String(10) not null;/*ASSOCIATION*/
-		key ACT_ID			: String(10) not null;/*ASSOCIATION*/
-		key GROUP_NUMBER	: Integer not null;
-			GROUP_NAME		: String(60);
-			TO_RULE_SET		:association[1] to RULE_SET on TO_RULE_SET.RS_ID = RS_ID;/*IN*/
-			TO_ACTIVITY		:association[1] to ACTIVITY on TO_ACTIVITY.ACT_ID = ACT_ID;/*IN*/
-	};
+    entity ACT_GROUP {
+        key RS_ID        : String(10) not null; /*ASSOCIATION*/
+        key ACT_ID       : String(10) not null; /*ASSOCIATION*/
+        key GROUP_NUMBER : Integer    not null;
+            GROUP_NAME   : String(60);
+            TO_RULE_SET  : association[1] to RULE_SET on TO_RULE_SET.RS_ID = RS_ID; /*IN*/
+            TO_ACTIVITY  : association[1] to ACTIVITY on TO_ACTIVITY.ACT_ID = ACT_ID; /*IN*/
+    };
 
     /*@@LAYOUT{"LAYOUTINFO":{"X":877,"Y":264.5}}*/
     entity ACT_TCODE {
-    	key RS_ID		: String(10) not null; /*ASSOCIATION*/
+        key RS_ID        : String(10) not null; /*ASSOCIATION*/
         key ACT_ID       : String(10); /*ASSOCIATION*/
             ACTIVE       : Boolean;
         key TCODE_VON    : String(20); /*ASSOCIATION*/
-        key GROUP_NUMBER : Integer not null;
+        key GROUP_NUMBER : Integer    not null;
             TO_ACTIVITY  : association[1] to ACTIVITY on TO_ACTIVITY.ACT_ID = ACT_ID; /*IN*/
-            TO_RULE_SET      : association[1]    to RULE_SET      on TO_RULE_SET.RS_ID = RS_ID; /*IN*/
+            TO_RULE_SET  : association[1] to RULE_SET on TO_RULE_SET.RS_ID = RS_ID; /*IN*/
     };
 
     /*@@LAYOUT{"LAYOUTINFO":{"X":927,"Y":511.5}}*/
     entity ACT_AUTH {
-        key RS_ID			: String(10) not null; /*ASSOCIATION*/
+        key RS_ID           : String(10) not null; /*ASSOCIATION*/
         key ACT_ID          : String(10) not null; /*ASSOCIATION*/
         key GROUP_NUMBER    : Integer    not null;
         key OBJECT          : String(60) not null; /*ASSOCIATION*/
@@ -168,48 +160,48 @@ context masterdata {
             LOGIC_OPERATOR  : Integer    not null;
             ACTIVE          : Boolean;
             TO_ACTIVITY     : association[1] to ACTIVITY on TO_ACTIVITY.ACT_ID = ACT_ID; /*IN*/
-            TO_RULE_SET		: association[1] to RULE_SET on TO_RULE_SET.RS_ID = RS_ID;
-            //TO_TOBJT        : association[1] to TOBJT    on TO_TOBJT.OBJECT = OBJECT; /*IN*/
+            TO_RULE_SET     : association[1] to RULE_SET on TO_RULE_SET.RS_ID = RS_ID;
+        //TO_TOBJT        : association[1] to TOBJT    on TO_TOBJT.OBJECT = OBJECT; /*IN*/
 
     };
 
 
     /*@@LAYOUT{"LAYOUTINFO":{"X":-526,"Y":460.5}}*/
     entity TESTS {
-        key TST_ID                    : String(10) not null;
+        key TST_ID                    : String(10)  not null;
             TST_NAME                  : String(300) not null;
-        key RS_ID                     : String(10) not null; /*ASSOCIATION*/
+        key RS_ID                     : String(10)  not null; /*ASSOCIATION*/
             ACTIVE                    : Boolean;
             DESCRIPTION               : LargeString;
-            OWNER                     : String(60) not null; /*ASSOCIATION*/
+            OWNER                     : String(60)  not null; /*ASSOCIATION*/
             WORKFLOW_FLAG             : Boolean;
             TO_RULE_SET               : association[1]    to RULE_SET               on TO_RULE_SET.RS_ID = RS_ID; /*IN*/
             TO_USERS                  : association[1]    to USERS                  on TO_USERS.USER_ID = OWNER; /*IN*/
             TO_TEST_ACTIVITY          : association[0..*] to TEST_ACTIVITY          on TO_TEST_ACTIVITY.TST_ID = TST_ID; /*OUT*/
-            TO_TESTS_GROUP          : association[0..*] to TESTS_GROUP          on TO_TESTS_GROUP.TST_ID = TST_ID; /*OUT*/
+            TO_TESTS_GROUP            : association[0..*] to TESTS_GROUP            on TO_TESTS_GROUP.TST_ID = TST_ID; /*OUT*/
             TO_RISK_TEST              : association[0..*] to RISK_TEST              on TO_RISK_TEST.TST_ID = TST_ID; /*OUT*/
             TO_TESTS_BUSINESS_CONTROL : association[0..*] to TESTS_BUSINESS_CONTROL on TO_TESTS_BUSINESS_CONTROL.TST_ID = TST_ID; /*OUT*/
     };
 
-	entity TESTS_GROUP{
-		key RS_ID			: String(10) not null;/*ASSOCIATION*/
-		key TST_ID			: String(10) not null;/*ASSOCIATION*/
-		key GROUP_NUMBER	: Integer not null;
-			GROUP_NAME		: String(60);
-			TO_RULE_SET		:association[1] to RULE_SET on TO_RULE_SET.RS_ID = RS_ID;/*IN*/
-			TO_TESTS		:association[1] to TESTS on TO_TESTS.TST_ID = TST_ID;/*IN*/
-	};
+    entity TESTS_GROUP {
+        key RS_ID        : String(10) not null; /*ASSOCIATION*/
+        key TST_ID       : String(10) not null; /*ASSOCIATION*/
+        key GROUP_NUMBER : Integer    not null;
+            GROUP_NAME   : String(60);
+            TO_RULE_SET  : association[1] to RULE_SET on TO_RULE_SET.RS_ID = RS_ID; /*IN*/
+            TO_TESTS     : association[1] to TESTS    on TO_TESTS.TST_ID = TST_ID; /*IN*/
+    };
 
     /*@@LAYOUT{"LAYOUTINFO":{"X":-533,"Y":221.5}}*/
     entity TEST_ACTIVITY {
-        key RS_ID		: String(10) not null; /*ASSOCIATION*/
-        key TST_ID      : String(10) not null; /*ASSOCIATION*/
-        key ACT_ID      : String(10) not null; /*ASSOCIATION*/
-        key	TCODE_VON		: String(20) not null;
-        key	GROUP_NUMBER : Integer    not null;
-            TO_RULE_SET		:association[1] to RULE_SET on TO_RULE_SET.RS_ID = RS_ID;/*IN*/
-            TO_TESTS    : association[1] to TESTS    on TO_TESTS.TST_ID = TST_ID; /*IN*/
-            TO_ACTIVITY : association[1] to ACTIVITY on TO_ACTIVITY.ACT_ID = ACT_ID; /*IN*/
+        key RS_ID        : String(10) not null; /*ASSOCIATION*/
+        key TST_ID       : String(10) not null; /*ASSOCIATION*/
+        key ACT_ID       : String(10) not null; /*ASSOCIATION*/
+        key TCODE_VON    : String(20) not null;
+        key GROUP_NUMBER : Integer    not null;
+            TO_RULE_SET  : association[1] to RULE_SET on TO_RULE_SET.RS_ID = RS_ID; /*IN*/
+            TO_TESTS     : association[1] to TESTS    on TO_TESTS.TST_ID = TST_ID; /*IN*/
+            TO_ACTIVITY  : association[1] to ACTIVITY on TO_ACTIVITY.ACT_ID = ACT_ID; /*IN*/
 
     };
 
@@ -297,41 +289,4 @@ context masterdata {
             TO_TESTS            : association[1] to TESTS            on TO_TESTS.TST_ID = TST_ID; /*IN*/
             TO_BUSINESS_CONTROL : association[1] to BUSINESS_CONTROL on TO_BUSINESS_CONTROL.BC_ID = BC_ID; /*IN*/
     };
-    
-    @OData.publish : true
-    view ACT_LIST as
-        select from ACTIVITY as ACTIVITY
-        left outer join (
-                    RULE_SET as RULE_SET
-        )                                          on
-            ACTIVITY.RS_ID = RULE_SET.RS_ID
-        left outer join (
-                    MODULE as MODULE
-        )                                          on
-            ACTIVITY.MODULE_ID = MODULE.MODULE_ID
-        left outer join (
-                    SUB_MODULE as SUB_MODULE
-        )                                          on
-            ACTIVITY.SUB_MODULE_ID = SUB_MODULE.SUB_MODULE_ID
-        left outer join (
-                    PROCESSES as PROCESSES
-        )                                          on
-            ACTIVITY.PROCESS_ID = PROCESSES.PROCESS_ID
-        left outer join (
-                    SUB_PROCESSES as SUB_PROCESSES
-        )                                          on
-            ACTIVITY.SUB_PROCESS_ID = SUB_PROCESSES.PROCESS_ID
-        distinct {
-        ACTIVITY.ACT_ID,
-        ACTIVITY.ACT_NAME,
-        RULE_SET.RS_NAME,
-        ACTIVITY.ACTIVE,
-        ACTIVITY.SEVERITY,
-        MODULE.MODULE_NAME,
-        SUB_MODULE.SUB_MODULE_NAME,
-        ACTIVITY.OWNER,
-        PROCESSES.PROCESS_NAME,
-        SUB_PROCESSES.SUB_PROCESS_NAME,
-        ACTIVITY.WORKFLOW_FLAG
-        };
 };

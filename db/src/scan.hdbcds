@@ -332,58 +332,14 @@ context scan {
             );
 
     //------------------------------------------------------------------------------------------------------
-			/*View produces a list of SCAN1_AUTH_P01_ALL_MATCHES values where the values have been grouped by OBJCT, AUTH,
-     		FIELD, VON, BIS, ACT_ID, GROUP_NUMBER, OBJECT, AUTH_FIELD and LOGIC_OPERATOR to produce a unique list of
-     		values and provide a count of values matches in SCAN1_AUTH_P01_ALL_MATCHES.  The where clause then limits the records
-     		to only those records set to active.
+    /*This view produces a list of distinct AUTH_VALUES_VON values from SCAN1_AUTH_P01_ALL_MATCHES to then perform a count on the AUTH_VALUES_VON field.*/
 
-     		This view is required as the count field produces the field COUNT_OF_AUTH_VALUES which provides a value to compare the ACT_AUTH
-     		matches to.  This same count process is applied to the records produced from ACT_AUTH which then produces a COUNT_OF_AUTH_VALUES
-     		field for each AUTH.  These tables are then joined on COUNT_OF_AUTH_VALUES, AUTH_FIELD, OBJECT, GROUP_NUMBER and ACT_ID to produce
-     		a list of matches where the correct number of values are true for an AUTH. This caters for the AND logical operator matches at a value level.*/
-
-    /*view SCAN1_AUTH_P03_AND_VALUE_COUNT as
-        select from SCAN1_AUTH_P01_ALL_MATCHES as P1
-        {
-            P1.OBJCT,
-            P1.AUTH,
-            P1.FIELD,
-            P1.VON,
-            P1.BIS,
-            P1.ACT_ID,
-            P1.GROUP_NUMBER,
-            P1.OBJECT,
-            P1.AUTH_FIELD,
-            count(P1.AUTH_VALUES_VON) as COUNT_OF_AUTH_VALUES,
-            P1.LOGIC_OPERATOR
-        }
-        group by
-            P1.OBJCT,
-            P1.AUTH,
-            P1.FIELD,
-            P1.VON,
-            P1.BIS,
-            P1.ACT_ID,
-            P1.GROUP_NUMBER,
-            P1.OBJECT,
-            P1.AUTH_FIELD,
-            P1.LOGIC_OPERATOR
-        having
-            (
-                (
-                    (P1.LOGIC_OPERATOR) = 1
-                )
-            );*/
-
-    
     view SCAN1_AUTH_P03_MATCH_DISTINCT as
         select from SCAN1_AUTH_P01_ALL_MATCHES as P1
         distinct {
             P1.OBJCT,
             P1.AUTH,
             P1.FIELD,
-            //P1.VON,
-            //P1.BIS,
             P1.ACT_ID,
             P1.GROUP_NUMBER,
             P1.OBJECT,
@@ -399,79 +355,83 @@ context scan {
                 )
             );
     
-    
-    view SCAN1_AUTH_P03_AND_VALUE_COUNT as
-        select from SCAN1_AUTH_P03_MATCH_DISTINCT as P1
-        distinct {
-            P1.OBJCT,
-            P1.AUTH,
-            P1.FIELD,
-            //P1.VON,
-            //P1.BIS,
-            P1.ACT_ID,
-            P1.GROUP_NUMBER,
-            P1.OBJECT,
-            P1.AUTH_FIELD,
-            count(P1.AUTH_VALUES_VON) as COUNT_OF_AUTH_VALUES,
-            P1.LOGIC_OPERATOR
-        }
-        group by
-            P1.OBJCT,
-            P1.AUTH,
-            P1.FIELD,
-            //P1.VON,
-            //P1.BIS,
-            P1.ACT_ID,
-            P1.GROUP_NUMBER,
-            P1.OBJECT,
-            P1.AUTH_FIELD,
-            P1.LOGIC_OPERATOR;
+
 
     //------------------------------------------------------------------------------------------------------
-			/*This view joins SCAN1_AUTH_P02_AUTH_AND_VALUE_COUNT and SCAN1_AUTH_P03_AND_VALUE_COUNT on COUNT_OF_AUTH_VALUES,
+			/*View produces a list of SCAN1_AUTH_P01_ALL_MATCHES values where the values have been grouped by OBJCT, AUTH,
+     		FIELD, VON, BIS, ACT_ID, GROUP_NUMBER, OBJECT, AUTH_FIELD and LOGIC_OPERATOR to produce a unique list of
+     		values and provide a count of values matches in SCAN1_AUTH_P01_ALL_MATCHES.  The where clause then limits the records
+     		to only those records set to active.
+
+     		This view is required as the count field produces the field COUNT_OF_AUTH_VALUES which provides a value to compare the ACT_AUTH
+     		matches to.  This same count process is applied to the records produced from ACT_AUTH which then produces a COUNT_OF_AUTH_VALUES
+     		field for each AUTH.  These tables are then joined on COUNT_OF_AUTH_VALUES, AUTH_FIELD, OBJECT, GROUP_NUMBER and ACT_ID to produce
+     		a list of matches where the correct number of values are true for an AUTH. This caters for the AND logical operator matches at a value level.*/
+    
+    view SCAN1_AUTH_P04_AND_VALUE_COUNT as
+        select from SCAN1_AUTH_P03_MATCH_DISTINCT as P3
+        distinct {
+            P3.OBJCT,
+            P3.AUTH,
+            P3.FIELD,
+            P3.ACT_ID,
+            P3.GROUP_NUMBER,
+            P3.OBJECT,
+            P3.AUTH_FIELD,
+            count(P3.AUTH_VALUES_VON) as COUNT_OF_AUTH_VALUES,
+            P3.LOGIC_OPERATOR
+        }
+        group by
+            P3.OBJCT,
+            P3.AUTH,
+            P3.FIELD,
+            P3.ACT_ID,
+            P3.GROUP_NUMBER,
+            P3.OBJECT,
+            P3.AUTH_FIELD,
+            P3.LOGIC_OPERATOR;
+
+    //------------------------------------------------------------------------------------------------------
+			/*This view joins SCAN1_AUTH_P02_AUTH_AND_VALUE_COUNT and SCAN1_AUTH_P04_AND_VALUE_COUNT on COUNT_OF_AUTH_VALUES,
      		AUTH_FIELD, OBJECT, GROUP_NUMBER and ACT_ID.  The join on COUNT_OF_AUTH_VALUES between the two tables
      		ensures only AND match records are produces if they match all of the values specified in ACT_AUTH.
      		By producing the COUNT_OF_AUTH_VALUES in both tables it provides a commonality between the two tables to
      		compare and produce only true AND value matches. */
 
-    view SCAN1_AUTH_P04_AND_VALUE_TRUE as
-        select from SCAN1_AUTH_P03_AND_VALUE_COUNT as P3
+    view SCAN1_AUTH_P05_AND_VALUE_TRUE as
+        select from SCAN1_AUTH_P04_AND_VALUE_COUNT as P4
         join (
                     SCAN1_AUTH_P02_AUTH_AND_VALUE_COUNT as P2
         )                                                     on
                 //P2.COUNT_OF_AUTH_VALUES = P3.COUNT_OF_AUTH_VALUES
-            /*and*/ P2.AUTH_FIELD           = P3.AUTH_FIELD
-            and P2.OBJECT               = P3.OBJECT
-            and P2.GROUP_NUMBER         = P3.GROUP_NUMBER
-            and P2.ACT_ID               = P3.ACT_ID
+            /*and*/ P2.AUTH_FIELD           = P4.AUTH_FIELD
+            and P2.OBJECT               = P4.OBJECT
+            and P2.GROUP_NUMBER         = P4.GROUP_NUMBER
+            and P2.ACT_ID               = P4.ACT_ID
         {
-            P3.OBJCT,
-            P3.AUTH,
-            P3.FIELD,
-            //P3.VON,
-            //P3.BIS,
-            P3.ACT_ID,
-            P3.GROUP_NUMBER,
-            P3.OBJECT,
-            P3.AUTH_FIELD,
+            P4.OBJCT,
+            P4.AUTH,
+            P4.FIELD,
+            P4.ACT_ID,
+            P4.GROUP_NUMBER,
+            P4.OBJECT,
+            P4.AUTH_FIELD,
             P2.COUNT_OF_AUTH_VALUES as "ACT_COUNT",
-            P3.COUNT_OF_AUTH_VALUES as "MATCH_COUNT",
-            P3.LOGIC_OPERATOR
+            P4.COUNT_OF_AUTH_VALUES as "MATCH_COUNT",
+            P4.LOGIC_OPERATOR
         }
-        Where P3.COUNT_OF_AUTH_VALUES >= P2.COUNT_OF_AUTH_VALUES;
+        Where P4.COUNT_OF_AUTH_VALUES >= P2.COUNT_OF_AUTH_VALUES;
 
     //------------------------------------------------------------------------------------------------------
 		/*This view produces all value matches where the logical operator is OR.  This is any record in
    		SCAN1_AUTH_P01_ALL_MATCHES where the logical operator is 2.*/
 
-    view SCAN1_AUTH_P05_OR_VALUE_TRUE as
+    view SCAN1_AUTH_P06_OR_VALUE_TRUE as
         select from SCAN1_AUTH_P01_ALL_MATCHES as P1
         {
             P1.OBJCT,
             P1.AUTH,
             P1.FIELD,
-            //P1.VON,
-            //P1.BIS,
             P1.ACT_ID,
             P1.GROUP_NUMBER,
             P1.OBJECT,
@@ -488,34 +448,30 @@ context scan {
             );
 
     //------------------------------------------------------------------------------------------------------
-		/*This view is a UNION of SCAN1_AUTH_P04_AND_VALUE_TRUE and SCAN1_AUTH_P05_OR_VALUE_TRUE to produce a full list of value matches.*/
-	view SCAN1_AUTH_P06_UNION_VALUE_TRUE as
-		select from SCAN1_AUTH_P04_AND_VALUE_TRUE as P4
+		/*This view is a UNION of SCAN1_AUTH_P05_AND_VALUE_TRUE and SCAN1_AUTH_P06_OR_VALUE_TRUE to produce a full list of value matches.*/
+	view SCAN1_AUTH_P07_UNION_VALUE_TRUE as
+		select from SCAN1_AUTH_P05_AND_VALUE_TRUE as P5
 			distinct{
-			P4.OBJCT,
-            P4.AUTH,
-            P4.FIELD,
-            //P4.VON,
-            //P4.BIS,
-            P4.ACT_ID,
-            P4.GROUP_NUMBER,
-            P4.OBJECT,
-            P4.AUTH_FIELD,
-            P4.LOGIC_OPERATOR
-			}
-   union
-		select from SCAN1_AUTH_P05_OR_VALUE_TRUE as P5
-		distinct{
-            P5.OBJCT,
+			P5.OBJCT,
             P5.AUTH,
             P5.FIELD,
-            //P5.VON,
-            //P5.BIS,
             P5.ACT_ID,
             P5.GROUP_NUMBER,
             P5.OBJECT,
             P5.AUTH_FIELD,
             P5.LOGIC_OPERATOR
+			}
+   union
+		select from SCAN1_AUTH_P06_OR_VALUE_TRUE as P6
+		distinct{
+            P6.OBJCT,
+            P6.AUTH,
+            P6.FIELD,
+            P6.ACT_ID,
+            P6.GROUP_NUMBER,
+            P6.OBJECT,
+            P6.AUTH_FIELD,
+            P6.LOGIC_OPERATOR
 		};
 
     //------------------------------------------------------------------------------------------------------
@@ -523,7 +479,7 @@ context scan {
 
     //------------------------------------------------------------------------------------------------------
 
-    view SCAN1_AUTH_P07_AUTH_FIELD as
+    view SCAN1_AUTH_P08_AUTH_FIELD as
         select from ACT_AUTH distinct
         {
             ACT_AUTH.ACT_ID,
@@ -541,36 +497,36 @@ context scan {
             );
 
     //------------------------------------------------------------------------------------------------------
-			/*This view performs a count on AUTH_FIELD from the unique list of AUTH_FIELD values produces in SCAN1_AUTH_P07_AUTH_FIELD.
+			/*This view performs a count on AUTH_FIELD from the unique list of AUTH_FIELD values produces in SCAN1_AUTH_P08_AUTH_FIELD.
      	
      		This view is required as the count field produces the field COUNT_OF_AUTH_FIELD which provides a value to compare the AUTH matches to.
-     		The same count process is applied to the records produced from SCAN1_AUTH_P09_MATCH_FIELD which also produces COUNT_OF_AUTH_FIELD for
+     		The same count process is applied to the records produced from SCAN1_AUTH_P10_MATCH_FIELD which also produces COUNT_OF_AUTH_FIELD for
      		each AUTH value match. These two tables are then joined on COUNT_OF_AUTH_FIELD, OBJECT, GROUP_NUMBER and ACT_ID to produce a list of
      		matches were the correct number of fields are true for an AUTH.  This caters for matches that may occur due to there being multiple field
      		within the authorisation object.*/
 
 
-    view SCAN1_AUTH_P08_AUTH_FIELD_COUNT as
-        select from SCAN1_AUTH_P07_AUTH_FIELD as P7
+    view SCAN1_AUTH_P09_AUTH_FIELD_COUNT as
+        select from SCAN1_AUTH_P08_AUTH_FIELD as P8
         {
-            P7.ACT_ID,
-            P7.GROUP_NUMBER,
-            P7.OBJECT,
-            count(P7.AUTH_FIELD) as COUNT_OF_AUTH_FIELD,
-            P7.ACTIVE
+            P8.ACT_ID,
+            P8.GROUP_NUMBER,
+            P8.OBJECT,
+            count(P8.AUTH_FIELD) as COUNT_OF_AUTH_FIELD,
+            P8.ACTIVE
         }
         group by
-            P7.ACT_ID,
-            P7.GROUP_NUMBER,
-            P7.OBJECT,
-            P7.ACTIVE;
+            P8.ACT_ID,
+            P8.GROUP_NUMBER,
+            P8.OBJECT,
+            P8.ACTIVE;
 
     //------------------------------------------------------------------------------------------------------
 		/*This view produces a list of distinct AUTH_FIELD values from SCAN_P06_UNION_VALUE_TRUE to then perform a count on the AUTH_FIELD field.*/
 
 
-    view SCAN1_AUTH_P09_MATCH_FIELD as
-        select from SCAN1_AUTH_P06_UNION_VALUE_TRUE distinct
+    view SCAN1_AUTH_P10_MATCH_FIELD as
+        select from SCAN1_AUTH_P07_UNION_VALUE_TRUE distinct
         {
             OBJCT,
             AUTH,
@@ -582,56 +538,56 @@ context scan {
         };
 
     //------------------------------------------------------------------------------------------------------
-			/*This view performs a count on AUTH_FIELD from the unique list of AUTH_FIELD values produces in SCAN1_AUTH_P09_MATCH_FIELD.
+			/*This view performs a count on AUTH_FIELD from the unique list of AUTH_FIELD values produces in SCAN1_AUTH_P10_MATCH_FIELD.
      	
      		This view is required as the count field produces the field COUNT_OF_AUTH_FIELD which provides a value to compare the AUTH matches to.
-     		The same count process is applied to the records produced from SCAN1_AUTH_P07_AUTH_FIELD which also produces COUNT_OF_AUTH_FIELD for
+     		The same count process is applied to the records produced from SCAN1_AUTH_P08_AUTH_FIELD which also produces COUNT_OF_AUTH_FIELD for
      		each AUTH value match. These two tables are then joined on COUNT_OF_AUTH_FIELD, OBJECT, GROUP_NUMBER and ACT_ID to produce a list of
      		matches were the correct number of fields are true for an AUTH.  This caters for matches that may occur due to there being multiple field
      		within the authorisation object.*/
 
-    view SCAN1_AUTH_P10_MATCH_FIELD_COUNT as
-        select from SCAN1_AUTH_P09_MATCH_FIELD as P9
-        {
-            P9.OBJCT,
-            P9.AUTH,
-            P9.ACT_ID,
-            P9.GROUP_NUMBER,
-            P9.OBJECT,
-            count(P9.AUTH_FIELD) as COUNT_OF_AUTH_FIELD
-        }
-        group by
-            P9.OBJCT,
-            P9.AUTH,
-            P9.ACT_ID,
-            P9.GROUP_NUMBER,
-            P9.OBJECT;
-
-    //------------------------------------------------------------------------------------------------------
-			/*This view joins SCAN1_AUTH_P08_AUTH_FIELD_COUNT and SCAN1_AUTH_P10_MATCH_FIELD_COUNT on COUNT_OF_AUTH_FIELD,
-     		OBJECT, GROUP_NUMBER and ACT_ID.  The join on COUNT_OF_AUTH_FIELD between the two tables
-     		ensures only matches are made where all fields in the activity occur in the auth.
-     		By producing the COUNT_OF_AUTH_FIELD in both tables it provides a commonality between the two tables to
-     		compare and produce only true FIELD matches. */
-
-    view SCAN1_AUTH_P11_MATCH_FIELD_TRUE as
-        select from SCAN1_AUTH_P10_MATCH_FIELD_COUNT as P10
-        join (
-                    SCAN1_AUTH_P08_AUTH_FIELD_COUNT as P8
-        )                                                   on
-                //P8.COUNT_OF_AUTH_FIELD = P10.COUNT_OF_AUTH_FIELD
-            /*and*/ P8.OBJECT              = P10.OBJECT
-            and P8.GROUP_NUMBER        = P10.GROUP_NUMBER
-            and P8.ACT_ID              = P10.ACT_ID
+    view SCAN1_AUTH_P11_MATCH_FIELD_COUNT as
+        select from SCAN1_AUTH_P10_MATCH_FIELD as P10
         {
             P10.OBJCT,
             P10.AUTH,
             P10.ACT_ID,
             P10.GROUP_NUMBER,
-            P8.COUNT_OF_AUTH_FIELD as "AUTH_COUNT_OF_AUTH_FIELD",
-            P10.COUNT_OF_AUTH_FIELD as "MATCH_COUNT_OF_AUTH_FIELD"
+            P10.OBJECT,
+            count(P10.AUTH_FIELD) as COUNT_OF_AUTH_FIELD
         }
-        where P10.COUNT_OF_AUTH_FIELD >= P8.COUNT_OF_AUTH_FIELD;
+        group by
+            P10.OBJCT,
+            P10.AUTH,
+            P10.ACT_ID,
+            P10.GROUP_NUMBER,
+            P10.OBJECT;
+
+    //------------------------------------------------------------------------------------------------------
+			/*This view joins SCAN1_AUTH_P09_AUTH_FIELD_COUNT and SCAN1_AUTH_P11_MATCH_FIELD_COUNT on COUNT_OF_AUTH_FIELD,
+     		OBJECT, GROUP_NUMBER and ACT_ID.  The join on COUNT_OF_AUTH_FIELD between the two tables
+     		ensures only matches are made where all fields in the activity occur in the auth.
+     		By producing the COUNT_OF_AUTH_FIELD in both tables it provides a commonality between the two tables to
+     		compare and produce only true FIELD matches. */
+
+    view SCAN1_AUTH_P12_MATCH_FIELD_TRUE as
+        select from SCAN1_AUTH_P11_MATCH_FIELD_COUNT as P11
+        join (
+                    SCAN1_AUTH_P09_AUTH_FIELD_COUNT as P9
+        )                                                   on
+                //P8.COUNT_OF_AUTH_FIELD = P10.COUNT_OF_AUTH_FIELD
+            /*and*/ P9.OBJECT              = P11.OBJECT
+            and P9.GROUP_NUMBER        = P11.GROUP_NUMBER
+            and P9.ACT_ID              = P11.ACT_ID
+        {
+            P11.OBJCT,
+            P11.AUTH,
+            P11.ACT_ID,
+            P11.GROUP_NUMBER,
+            P9.COUNT_OF_AUTH_FIELD as "AUTH_COUNT_OF_AUTH_FIELD",
+            P11.COUNT_OF_AUTH_FIELD as "MATCH_COUNT_OF_AUTH_FIELD"
+        }
+        where P11.COUNT_OF_AUTH_FIELD >= P9.COUNT_OF_AUTH_FIELD;
 
 
     //------------------------------------------------------------------------------------------------------
@@ -639,7 +595,7 @@ context scan {
 
     //------------------------------------------------------------------------------------------------------
 
-    view SCAN1_AUTH_P12_AUTH_OBJCT as
+    view SCAN1_AUTH_P13_AUTH_OBJCT as
         select from ACT_AUTH distinct
         {
             ACT_AUTH.ACT_ID,
@@ -664,25 +620,25 @@ context scan {
      		within the group.*/
 
 
-    view SCAN1_AUTH_P13_AUTH_OBJCT_COUNT as
-        select from SCAN1_AUTH_P12_AUTH_OBJCT as P12
+    view SCAN1_AUTH_P14_AUTH_OBJCT_COUNT as
+        select from SCAN1_AUTH_P13_AUTH_OBJCT as P13
         {
-            P12.ACT_ID,
-            P12.GROUP_NUMBER,
-            count(P12.OBJECT) as COUNT_OF_AUTH_OBJCT,
-            P12.ACTIVE
+            P13.ACT_ID,
+            P13.GROUP_NUMBER,
+            count(P13.OBJECT) as COUNT_OF_AUTH_OBJCT,
+            P13.ACTIVE
         }
         group by
-            P12.ACT_ID,
-            P12.GROUP_NUMBER,
-            P12.ACTIVE;
+            P13.ACT_ID,
+            P13.GROUP_NUMBER,
+            P13.ACTIVE;
 
     //------------------------------------------------------------------------------------------------------
-		/*This view produces a list of distinct OBJCT values from SCAN1_AUTH_P11_MATCH_FIELD_TRUE to then perform a count on the OBJCT field.*/
+		/*This view produces a list of distinct OBJCT values from SCAN1_AUTH_P12_MATCH_FIELD_TRUE to then perform a count on the OBJCT field.*/
 
 
-    view SCAN1_AUTH_P14_MATCH_OBJCT as
-        select from SCAN1_AUTH_P11_MATCH_FIELD_TRUE distinct
+    view SCAN1_AUTH_P15_MATCH_OBJCT as
+        select from SCAN1_AUTH_P12_MATCH_FIELD_TRUE distinct
         {
             AUTH,
             ACT_ID,
@@ -691,99 +647,99 @@ context scan {
         };
 
     //------------------------------------------------------------------------------------------------------
-			/*This view performs a count on OBJCT from the unique list of OBJCT values produces in SCAN1_AUTH_P14_MATCH_OBJCT.
+			/*This view performs a count on OBJCT from the unique list of OBJCT values produces in SCAN1_AUTH_P15_MATCH_OBJCT.
      	
      		This view is required as the count field produces the field COUNT_OF_AUTH_OBJCT which provides a value to compare the AUTH matches to.
-     		The same count process is applied to the records produced from SCAN1_AUTH_P12_AUTH_OBJCT which also produces COUNT_OF_AUTH_OBJCT for
+     		The same count process is applied to the records produced from SCAN1_AUTH_P13_AUTH_OBJCT which also produces COUNT_OF_AUTH_OBJCT for
      		each AUTH value match. These two tables are then joined on COUNT_OF_AUTH_OBJCT, GROUP_NUMBER and ACT_ID to produce a list of
      		matches were the correct number of objects are true for an AUTH.  This caters for matches that may occur due to there being multiple objects
      		within the one group.*/
 
-    view SCAN1_AUTH_P15_MATCH_OBJCT_COUNT as
-        select from SCAN1_AUTH_P14_MATCH_OBJCT as P14
+    view SCAN1_AUTH_P16_MATCH_OBJCT_COUNT as
+        select from SCAN1_AUTH_P15_MATCH_OBJCT as P15
         {
-            P14.AUTH,
-            P14.ACT_ID,
-            P14.GROUP_NUMBER,
-            count(P14.OBJCT) as COUNT_OF_AUTH_OBJCT
+            P15.AUTH,
+            P15.ACT_ID,
+            P15.GROUP_NUMBER,
+            count(P15.OBJCT) as COUNT_OF_AUTH_OBJCT
         }
         group by
-            P14.AUTH,
-            P14.ACT_ID,
-            P14.GROUP_NUMBER;
+            P15.AUTH,
+            P15.ACT_ID,
+            P15.GROUP_NUMBER;
 
 
 
     //------------------------------------------------------------------------------------------------------
-			/*This view joins SCAN1_AUTH_P08_AUTH_FIELD_COUNT and SCAN1_AUTH_P10_MATCH_FIELD_COUNT on COUNT_OF_AUTH_FIELD,
+			/*This view joins SCAN1_AUTH_P09_AUTH_FIELD_COUNT and SCAN1_AUTH_P11_MATCH_FIELD_COUNT on COUNT_OF_AUTH_FIELD,
      		OBJECT, GROUP_NUMBER and ACT_ID.  The join on COUNT_OF_AUTH_FIELD between the two tables
      		ensures only matches are made where all fields in the activity occur in the auth.
      		By producing the COUNT_OF_AUTH_FIELD in both tables it provides a commonality between the two tables to
      		compare and produce only true FIELD matches. */
 
-    view SCAN1_AUTH_P16_MATCH_OBJCT_TRUE as
-        select from SCAN1_AUTH_P15_MATCH_OBJCT_COUNT as P15
+    view SCAN1_AUTH_P17_MATCH_OBJCT_TRUE as
+        select from SCAN1_AUTH_P16_MATCH_OBJCT_COUNT as P16
         join (
-                    SCAN1_AUTH_P13_AUTH_OBJCT_COUNT as P13
+                    SCAN1_AUTH_P14_AUTH_OBJCT_COUNT as P14
         )                                                   on
-                P13.COUNT_OF_AUTH_OBJCT = P15.COUNT_OF_AUTH_OBJCT
-            and P13.GROUP_NUMBER        = P15.GROUP_NUMBER
-            and P13.ACT_ID              = P15.ACT_ID
+                P14.COUNT_OF_AUTH_OBJCT = P16.COUNT_OF_AUTH_OBJCT
+            and P14.GROUP_NUMBER        = P16.GROUP_NUMBER
+            and P14.ACT_ID              = P16.ACT_ID
         {
-            P15.AUTH,
-            P15.ACT_ID,
-            P15.GROUP_NUMBER,
-            P15.COUNT_OF_AUTH_OBJCT
+            P16.AUTH,
+            P16.ACT_ID,
+            P16.GROUP_NUMBER,
+            P16.COUNT_OF_AUTH_OBJCT
         };
 
     //------------------------------------------------------------------------------------------------------
 
-	view SCAN1_AUTH_P17_MATCH_OBJECT_DETAIL as 
-		select from SCAN1_AUTH_P16_MATCH_OBJCT_TRUE as P16
+	view SCAN1_AUTH_P18_MATCH_OBJECT_DETAIL as 
+		select from SCAN1_AUTH_P17_MATCH_OBJCT_TRUE as P17
 		join ( 
-				SCAN1_AUTH_P14_MATCH_OBJCT as P14)
+				SCAN1_AUTH_P15_MATCH_OBJCT as P15)
 				on
-				P16.AUTH = P14.AUTH
-				and P16.ACT_ID = P14.ACT_ID
-				and P16.GROUP_NUMBER = P14.GROUP_NUMBER
+				P17.AUTH = P15.AUTH
+				and P17.ACT_ID = P15.ACT_ID
+				and P17.GROUP_NUMBER = P15.GROUP_NUMBER
 				
 				{
-				P16.AUTH,
-				P16.ACT_ID,
-				P16.GROUP_NUMBER,
-				P14.OBJCT
+				P17.AUTH,
+				P17.ACT_ID,
+				P17.GROUP_NUMBER,
+				P15.OBJCT
 				};
 
     //------------------------------------------------------------------------------------------------------
-		/*This view joins SCAN1_AUTH_P01_ALL_MATCHES, SCAN1_AUTH_P06_UNION_VALUE_TRUE and SCAN1_AUTH_P11_MATCH_FIELD_TRUE on OBJCT,
+		/*This view joins SCAN1_AUTH_P01_ALL_MATCHES, SCAN1_AUTH_P07_UNION_VALUE_TRUE and SCAN1_AUTH_P12_MATCH_FIELD_TRUE on OBJCT,
     	AUTH, ACT_ID and GROUP_NU1MBER.  This provides the dill down detail for Auths for Scan 1 showing what values cause the matches to occur.
-    	This view uses the true field auth matches from SCAN1_AUTH_P11_MATCH_FIELD_TRUE and the true values matches from SCAN1_AUTH_P06_UNION_VALUE_TRUE
+    	This view uses the true field auth matches from SCAN1_AUTH_P12_MATCH_FIELD_TRUE and the true values matches from SCAN1_AUTH_P07_UNION_VALUE_TRUE
     	to connect back to SCAN1_AUTH_P01_ALL_MATCHES which shows all the individual matching records.*/
 
 
-    view SCAN1_AUTH_P18_FULL as
+    view SCAN1_AUTH_P19_FULL as
         select from SCAN1_AUTH_P01_ALL_MATCHES as P1
         join (
-                    SCAN1_AUTH_P06_UNION_VALUE_TRUE as P6
+                    SCAN1_AUTH_P07_UNION_VALUE_TRUE as P7
         )                                                  on
-                P1.OBJCT        = P6.OBJCT
-            and P1.AUTH         = P6.AUTH
-            and P1.ACT_ID       = P6.ACT_ID
-            and P1.GROUP_NUMBER = P6.GROUP_NUMBER
+                P1.OBJCT        = P7.OBJCT
+            and P1.AUTH         = P7.AUTH
+            and P1.ACT_ID       = P7.ACT_ID
+            and P1.GROUP_NUMBER = P7.GROUP_NUMBER
         join (
-                    SCAN1_AUTH_P11_MATCH_FIELD_TRUE as P11
+                    SCAN1_AUTH_P12_MATCH_FIELD_TRUE as P12
         )                                                  on
-                P6.OBJCT        = P11.OBJCT
-            and P6.AUTH         = P11.AUTH
-            and P6.ACT_ID       = P11.ACT_ID
-            and P6.GROUP_NUMBER = P11.GROUP_NUMBER
+                P7.OBJCT        = P12.OBJCT
+            and P7.AUTH         = P12.AUTH
+            and P7.ACT_ID       = P12.ACT_ID
+            and P7.GROUP_NUMBER = P12.GROUP_NUMBER
         join (
-        		SCAN1_AUTH_P17_MATCH_OBJECT_DETAIL as P17
+        		SCAN1_AUTH_P18_MATCH_OBJECT_DETAIL as P18
         	) on
-        		P6.OBJCT        = P17.OBJCT
-            and P6.AUTH         = P17.AUTH
-            and P6.ACT_ID       = P17.ACT_ID
-            and P6.GROUP_NUMBER = P17.GROUP_NUMBER
+        		P7.OBJCT        = P18.OBJCT
+            and P7.AUTH         = P18.AUTH
+            and P7.ACT_ID       = P18.ACT_ID
+            and P7.GROUP_NUMBER = P18.GROUP_NUMBER
         		
         distinct
         {
@@ -811,77 +767,77 @@ context scan {
     //SCAN AUTH TO PROFILE-------------------------------------------------------------------------------------------------------------------------------------------------
 
     //------------------------------------------------------------------------------------------------------
-		/*This view joins the true Auth matches from SCAN1_AUTH_P11_MATCH_FIELD_TRUE to the Auths corresponding Single Profile in UST10S.*/
+		/*This view joins the true Auth matches from SCAN1_AUTH_P12_MATCH_FIELD_TRUE to the Auths corresponding Single Profile in UST10S.*/
 
-    view SCAN1_AUTH_P19_SINGLE_PROF as
-        select from SCAN1_AUTH_P17_MATCH_OBJECT_DETAIL as P17
+    view SCAN1_AUTH_P20_SINGLE_PROF as
+        select from SCAN1_AUTH_P18_MATCH_OBJECT_DETAIL as P18
         join (
                     UST10S as UST10S
         )                                                  on
-                P17.OBJCT = UST10S.OBJCT
-            and P17.AUTH  = UST10S.AUTH
+                P18.OBJCT = UST10S.OBJCT
+            and P18.AUTH  = UST10S.AUTH
         distinct
         {
             UST10S.PROFN"SINGLE_PROFN",
-            P17.OBJCT,
-            P17.AUTH,
-            P17.ACT_ID,
-            P17.GROUP_NUMBER
+            P18.OBJCT,
+            P18.AUTH,
+            P18.ACT_ID,
+            P18.GROUP_NUMBER
         };
 
     //------------------------------------------------------------------------------------------------------
 		/*This view joins UST10C to the results of SCAN1_AUTH_P13 producing the list of composite profile matches.*/
 
-    view SCAN1_AUTH_P20_COMP_PROF as
-        select from SCAN1_AUTH_P19_SINGLE_PROF as P19
+    view SCAN1_AUTH_P21_COMP_PROF as
+        select from SCAN1_AUTH_P20_SINGLE_PROF as P20
         join (
                     UST10C as UST10C
         )                                             on
-            P19.SINGLE_PROFN = UST10C.SUBPROF
+            P20.SINGLE_PROFN = UST10C.SUBPROF
         distinct
         {
             UST10C.PROFN "COMP_PROFN",
-            P19.SINGLE_PROFN,
-            P19.OBJCT,
-            P19.AUTH,
-            P19.ACT_ID,
-            P19.GROUP_NUMBER
-        };
-
-    //------------------------------------------------------------------------------------------------------
-		/*This view is a Union of SCAN1_AUTH_P13 and SCAN1_AUTH_P14 creating a single output table for auth profile matches with a column identifying the type of profile.*/
-	view SCAN1_AUTH_P21_PROF_UNION as
-	select from SCAN1_AUTH_P19_SINGLE_PROF as P19
-	    {
-	    	P19.SINGLE_PROFN "PROFN",
-	    	'SINGLE_PROF' "TYPE",
-            P19.OBJCT,
-            P19.AUTH,
-            P19.ACT_ID,
-            P19.GROUP_NUMBER
-	    }
-UNION
-
-	select from SCAN1_AUTH_P20_COMP_PROF as P20
-		{
-			P20.COMP_PROFN "PROFN",
-	    	'COMP_PROF' "TYPE",
+            P20.SINGLE_PROFN,
             P20.OBJCT,
             P20.AUTH,
             P20.ACT_ID,
             P20.GROUP_NUMBER
+        };
+
+    //------------------------------------------------------------------------------------------------------
+		/*This view is a Union of SCAN1_AUTH_P13 and SCAN1_AUTH_P14 creating a single output table for auth profile matches with a column identifying the type of profile.*/
+	view SCAN1_AUTH_P22_PROF_UNION as
+	select from SCAN1_AUTH_P20_SINGLE_PROF as P20
+	    {
+	    	P20.SINGLE_PROFN "PROFN",
+	    	'SINGLE_PROF' "TYPE",
+            P20.OBJCT,
+            P20.AUTH,
+            P20.ACT_ID,
+            P20.GROUP_NUMBER
+	    }
+UNION
+
+	select from SCAN1_AUTH_P21_COMP_PROF as P21
+		{
+			P21.COMP_PROFN "PROFN",
+	    	'COMP_PROF' "TYPE",
+            P21.OBJCT,
+            P21.AUTH,
+            P21.ACT_ID,
+            P21.GROUP_NUMBER
 		};
 
 
     //------------------------------------------------------------------------------------------------------
 		/*This view shows the User Activity Auth matches.  This is done by joining SCAN1_AUTH_P15 to UST04.  The user type is also added into the view by joining UST04 and USR02.*/
 
-    view SCAN1_AUTH_P22_USERS as
-        select from SCAN1_AUTH_P21_PROF_UNION as P21
+    view SCAN1_AUTH_P23_USERS as
+        select from SCAN1_AUTH_P22_PROF_UNION as P22
          join (
                     UST04 as UST04
         )                                             on
-            P21.PROFN = UST04.PROFILE
+            P22.PROFN = UST04.PROFILE
          join (
         			USR02 as USR02
         	) on
@@ -890,73 +846,73 @@ UNION
         {
             UST04.BNAME,
             USR02.USTYP,
-            P21.PROFN,
-            P21.TYPE,
-            P21.OBJCT,
-            P21.AUTH,
-            P21.ACT_ID,
-            P21.GROUP_NUMBER
+            P22.PROFN,
+            P22.TYPE,
+            P22.OBJCT,
+            P22.AUTH,
+            P22.ACT_ID,
+            P22.GROUP_NUMBER
         };
 
     //------------------------------------------------------------------------------------------------------
     	/*This view shows the Auth single role matches. This is done by connecting SCAN1_AUTH_P15 to AGR_1016.*/
-	view SCAN1_AUTH_P23_ROLE_SINGLE as
-		select from SCAN1_AUTH_P21_PROF_UNION as P21
+	view SCAN1_AUTH_P24_ROLE_SINGLE as
+		select from SCAN1_AUTH_P22_PROF_UNION as P22
 		join (
 					AGR_1016 as AGR_1016
 			)on
-			P21.PROFN = AGR_1016.PROFILE
+			P22.PROFN = AGR_1016.PROFILE
 			distinct{
 			AGR_1016.AGR_NAME,
-			P21.PROFN,
-	    	P21.TYPE,
-            P21.OBJCT,
-            P21.AUTH,
-            P21.ACT_ID,
-            P21.GROUP_NUMBER
+			P22.PROFN,
+	    	P22.TYPE,
+            P22.OBJCT,
+            P22.AUTH,
+            P22.ACT_ID,
+            P22.GROUP_NUMBER
 					};
 
     //------------------------------------------------------------------------------------------------------
 	//This view produces a list of Auth composite role matches.  This si done by joining the results of SCAN1_AUTH_P17 to AGR_AGRS.
-	view SCAN1_AUTH_P24_ROLE_COMP as
-		select from SCAN1_AUTH_P23_ROLE_SINGLE as P23
+	view SCAN1_AUTH_P25_ROLE_COMP as
+		select from SCAN1_AUTH_P24_ROLE_SINGLE as P24
 		join (
 				AGR_AGRS as AGR_AGRS
 			)on
-			P23.AGR_NAME = AGR_AGRS.CHILD_AGR
+			P24.AGR_NAME = AGR_AGRS.CHILD_AGR
 		distinct {
 			AGR_AGRS.AGR_NAME,
-			P23.AGR_NAME "CHILD_AGR",
-			P23.PROFN,
-	    	P23.TYPE,
-            P23.OBJCT,
-            P23.AUTH,
-            P23.ACT_ID,
-            P23.GROUP_NUMBER
+			P24.AGR_NAME "CHILD_AGR",
+			P24.PROFN,
+	    	P24.TYPE,
+            P24.OBJCT,
+            P24.AUTH,
+            P24.ACT_ID,
+            P24.GROUP_NUMBER
 		};
 
     //------------------------------------------------------------------------------------------------------
     //This view is a Union of SCAN1_AUTH_P17 and SCAN1_AUTH_P18 crating a single output table for role matches with a column identifying the type of role.
 
-    view SCAN1_AUTH_P25_ROLE_UNION as
-        select from SCAN1_AUTH_P23_ROLE_SINGLE as P23 distinct
-        {
-    P23.AGR_NAME,
-    'SINGLE_ROLE' "TYPE",
-    P23.OBJCT,
-    P23.AUTH,
-    P23.ACT_ID,
-    P23.GROUP_NUMBER
-        }
-    union
-        select from SCAN1_AUTH_P24_ROLE_COMP as P24   distinct
+    view SCAN1_AUTH_P26_ROLE_UNION as
+        select from SCAN1_AUTH_P24_ROLE_SINGLE as P24 distinct
         {
     P24.AGR_NAME,
-    'COMP_ROLE' "TYPE",
+    'SINGLE_ROLE' "TYPE",
     P24.OBJCT,
     P24.AUTH,
     P24.ACT_ID,
     P24.GROUP_NUMBER
+        }
+    union
+        select from SCAN1_AUTH_P25_ROLE_COMP as P25   distinct
+        {
+    P25.AGR_NAME,
+    'COMP_ROLE' "TYPE",
+    P25.OBJCT,
+    P25.AUTH,
+    P25.ACT_ID,
+    P25.GROUP_NUMBER
         };
 
     //------------------------------------------------------------------------------------------------------	
@@ -964,38 +920,38 @@ UNION
 	//of all profile, user and role auth matches, providing in one view all the objects that have an activity auth match.  
 	//The column OBJECT_TYPE has been added to identify the type of object for each record.  The column OBJECT_SUB_TYPE has 
 	//been pulled from the type column in the source views to provide the object sub type for each record. 
-    view SCAN1_AUTH_P26_ALL as
-        select from SCAN1_AUTH_P21_PROF_UNION as P21 distinct
+    view SCAN1_AUTH_P27_ALL as
+        select from SCAN1_AUTH_P22_PROF_UNION as P22 distinct
         {
-            P21.PROFN "OBJECT_ID",
+            P22.PROFN "OBJECT_ID",
             'PROF' "OBJECT_TYPE",
-            P21.TYPE "OBJECT_SUB_TYPE",
-            P21.OBJCT,
-            P21.AUTH,
-            P21.ACT_ID,
-            P21.GROUP_NUMBER
-        }
-    union
-        select from SCAN1_AUTH_P22_USERS as P22      distinct
-        {
-            P22.BNAME "OBJECT_ID",
-            'USER' "OBJECT_TYPE",
-            P22.USTYP "OBJECT_SUB_TYPE",
+            P22.TYPE "OBJECT_SUB_TYPE",
             P22.OBJCT,
             P22.AUTH,
             P22.ACT_ID,
             P22.GROUP_NUMBER
         }
     union
-        select from SCAN1_AUTH_P25_ROLE_UNION as P25 distinct
+        select from SCAN1_AUTH_P23_USERS as P23      distinct
         {
-            P25.AGR_NAME "OBJECT_ID",
+            P23.BNAME "OBJECT_ID",
+            'USER' "OBJECT_TYPE",
+            P23.USTYP "OBJECT_SUB_TYPE",
+            P23.OBJCT,
+            P23.AUTH,
+            P23.ACT_ID,
+            P23.GROUP_NUMBER
+        }
+    union
+        select from SCAN1_AUTH_P26_ROLE_UNION as P26 distinct
+        {
+            P26.AGR_NAME "OBJECT_ID",
             'ROLE' "OBJECT_TYPE",
-            P25.TYPE "OBJECT_SUB_TYPE",
-            P25.OBJCT,
-            P25.AUTH,
-            P25.ACT_ID,
-            P25.GROUP_NUMBER
+            P26.TYPE "OBJECT_SUB_TYPE",
+            P26.OBJCT,
+            P26.AUTH,
+            P26.ACT_ID,
+            P26.GROUP_NUMBER
         };
         
     //------------------------------------------------------------------------------------------------------
@@ -1501,10 +1457,10 @@ UNION
     view SCAN2_P01_USER_ACT as
         select from SCAN2_P00_ACT_ALL as ACT_ALL
         left outer join (
-                    SCAN1_AUTH_P22_USERS as P22
+                    SCAN1_AUTH_P23_USERS as P23
         )                                      on
-                ACT_ALL.ACT_ID       = P22.ACT_ID
-            and ACT_ALL.GROUP_NUMBER = P22.GROUP_NUMBER
+                ACT_ALL.ACT_ID       = P23.ACT_ID
+            and ACT_ALL.GROUP_NUMBER = P23.GROUP_NUMBER
         left outer join (
                     SCAN1_TCODE_P06_USERS as P6
         )                                      on
@@ -1514,12 +1470,12 @@ UNION
         {
             ACT_ALL.ACT_ID,
             ACT_ALL.GROUP_NUMBER,
-            P22.BNAME "USER_ID",
-            P22.USTYP "USER_TYPE"
+            P23.BNAME "USER_ID",
+            P23.USTYP "USER_TYPE"
         }
         where
-            P22.BNAME = P6.BNAME
-            and P22.USTYP = P6.USTYP;
+            P23.BNAME = P6.BNAME
+            and P23.USTYP = P6.USTYP;
 
     //------------------------------------------------------------------------------------------------------
 
@@ -1533,10 +1489,10 @@ UNION
     view SCAN2_P02_PROF_ACT as
         select from SCAN2_P00_ACT_ALL as ACT_ALL
         left outer join (
-                    SCAN1_AUTH_P21_PROF_UNION as P21
+                    SCAN1_AUTH_P22_PROF_UNION as P22
         )                                      on
-                ACT_ALL.ACT_ID       = P21.ACT_ID
-            and ACT_ALL.GROUP_NUMBER = P21.GROUP_NUMBER
+                ACT_ALL.ACT_ID       = P22.ACT_ID
+            and ACT_ALL.GROUP_NUMBER = P22.GROUP_NUMBER
         left outer join (
                     SCAN1_TCODE_P05_PROF_UNION as P5
         )                                      on
@@ -1546,12 +1502,12 @@ UNION
         {
             ACT_ALL.ACT_ID,
             ACT_ALL.GROUP_NUMBER,
-            P21.PROFN "PROF_ID",
-            P21.TYPE "PROF_TYPE"
+            P22.PROFN "PROF_ID",
+            P22.TYPE "PROF_TYPE"
         }
         where
-                P21.PROFN     = P5.PROFN
-            and P21.TYPE = P5.TYPE;
+                P22.PROFN     = P5.PROFN
+            and P22.TYPE = P5.TYPE;
 
     //------------------------------------------------------------------------------------------------------
 
@@ -1565,10 +1521,10 @@ UNION
     view SCAN2_P03_ROLE_ACT as
         select from SCAN2_P00_ACT_ALL as ACT_ALL
         left outer join (
-                    SCAN1_AUTH_P25_ROLE_UNION as P25
+                    SCAN1_AUTH_P26_ROLE_UNION as P26
         )                                             on
-                ACT_ALL.ACT_ID       = P25.ACT_ID
-            and ACT_ALL.GROUP_NUMBER = P25.GROUP_NUMBER
+                ACT_ALL.ACT_ID       = P26.ACT_ID
+            and ACT_ALL.GROUP_NUMBER = P26.GROUP_NUMBER
         left outer join (
                     SCAN1_TCODE_P09_ROLE_UNION as P9
         )                                             on
@@ -1578,12 +1534,12 @@ UNION
         {
             ACT_ALL.ACT_ID,
             ACT_ALL.GROUP_NUMBER,
-            P25.AGR_NAME "ROLE_ID",
-            P25.TYPE "TYPE"
+            P26.AGR_NAME "ROLE_ID",
+            P26.TYPE "TYPE"
         }
         where
-            P25.AGR_NAME = P9.AGR_NAME
-            and P25.TYPE = P9.TYPE;
+            P26.AGR_NAME = P9.AGR_NAME
+            and P26.TYPE = P9.TYPE;
 
 
     //------------------------------------------------------------------------------------------------------
@@ -1837,7 +1793,6 @@ UNION
 			P01.OBJECT_SUB_TYPE,
 			P01.TCODE_VON//,
 			};
-			
 			
 	//End Work in progress
 };
