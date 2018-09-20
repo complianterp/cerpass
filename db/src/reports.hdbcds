@@ -1,0 +1,21 @@
+namespace cerpass.db;
+
+using cerpass.db :: scan.SCAN2_P04_FULL;
+
+
+context reports {
+	@OData.publish : true
+    view PieTest as
+        select from "SCAN2_P04_FULL" distinct
+        {
+            OBJECT_TYPE,
+            OBJECT_SUB_TYPE,
+            count(OBJECT_ID) as Occurrences
+        }
+        group by
+            OBJECT_TYPE,
+            OBJECT_SUB_TYPE
+        order by
+            OBJECT_TYPE,
+            OBJECT_SUB_TYPE;
+};
