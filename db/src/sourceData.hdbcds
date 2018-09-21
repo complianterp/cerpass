@@ -1,7 +1,7 @@
 namespace cerpass.db;
 
 @OData.publish : true
-context sapdata {
+context sourceData {
 
 /*@@LAYOUT{"LAYOUTINFO":{"X":1281,"Y":176.5}}*/
     entity TSTC {
@@ -19,7 +19,32 @@ context sapdata {
             LANGU       : String(10) not null;
         key OBJECT      : String(10) not null;
             TTEXT       : String(60);
-            //TO_ACT_AUTH : association[0..*] to ACT_AUTH on TO_ACT_AUTH.OBJECT = OBJECT; /*OUT*/
+    };
+    
+    /*@@LAYOUT{"LAYOUTINFO":{"X":1256,"Y":532.5}}*/
+    entity TOBJ { //No Data
+        key OBJCT       : String(10) not null;
+        key FIEL1      : String(10) not null;
+    	    FIEL2      : String(10) not null;
+    	    FIEL3      : String(10) not null;
+    	    FIEL4      : String(10) not null;
+    	    FIEL5      : String(10) not null;
+    	    FIEL6      : String(10) not null;
+    	    FIEL7      : String(10) not null;
+    	    FIEL8      : String(10) not null;
+    	    FIEL9      : String(10) not null;
+    	    FIEL0      : String(10) not null;
+    	    OCLSS      : String(4) not null;
+    	    BNAME      : String(12) not null;
+    	    FBLOCK      : String(8) not null;
+    	    CONVERSION      : String(1) not null;
+    };
+    
+    
+    /*@@LAYOUT{"LAYOUTINFO":{"X":1256,"Y":532.5}}*/
+    entity TACTZ { //No Data
+        key BROBJ       : String(10) not null;
+        key ACTVT      : String(2) not null;
     };
 
     /**@@LAYOUT{"LAYOUTINFO":{"X":-789,"Y":882.5}}*/
@@ -154,4 +179,19 @@ context sapdata {
 	PWDSALTEDHASH : String(60);
 	SECURITY_POLICY : String(60);
 	};
+
+	entity AGR_USERS{ //No Data
+	MANDT : String(60);
+	AGR_NAME : String(30);
+	UNAME : String(12);
+	FROM_DAT : String(8);
+	TO_DAT : String(8);
+	EXCLUDE : String(1);
+	CHANGE_DAT : String(8);
+	CHANGE_TIM : String(6);
+	CHANGE_TST : String(15);
+	ORG_FLAG : String(1);
+	COL_FLAG : String(1);
+	};
+	
 };

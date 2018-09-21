@@ -1,83 +1,18 @@
 namespace cerpass.db;
 
+using cerpass.db :: masterData.MODULE; //In Use
+using cerpass.db :: masterData.SUB_MODULE; //In Use
+using cerpass.db :: masterData.PROCESSES; //In Use
+using cerpass.db :: masterData.SUB_PROCESSES; //In Use
+using cerpass.db :: masterData.CUSTOMERS; //In Use
+using cerpass.db :: masterData.LOGICAL_SYSTEMS;
+using cerpass.db :: masterData.RISK_RATING; //In Use
+using cerpass.db :: configData.USERS; //In Use
+
 @OData.publish : true
-context masterdata {
+context ruleSet {
 
-    /*@@LAYOUT{"LAYOUTINFO":{"X":348,"Y":-45.5}}*/
-    entity MODULE {
-        key MODULE_ID     : String(10) not null;
-            MODULE_NAME   : String(60) not null;
-            TO_SUB_MODULE : association[0..*] to SUB_MODULE on TO_SUB_MODULE.MODULE_ID = MODULE_ID; /*OUT*/
-            TO_ACTIVITY   : association[0..*] to ACTIVITY   on TO_ACTIVITY.MODULE_ID = MODULE_ID; /*OUT*/
-    };
-
-    /*@@LAYOUT{"LAYOUTINFO":{"X":718,"Y":-93.5}}*/
-    entity SUB_MODULE {
-        key MODULE_ID       : String(10) not null; /*ASSOCIATION*/
-        key SUB_MODULE_ID   : String(10) not null;
-            SUB_MODULE_NAME : String(60) not null;
-            TO_MODULE       : association[1] to MODULE   on TO_MODULE.MODULE_ID = MODULE_ID; /*IN*/
-            TO_ACTIVITY     : association[1] to ACTIVITY on TO_ACTIVITY.SUB_MODULE_ID = SUB_MODULE_ID; /*OUT*/
-    };
-
-    /*@@LAYOUT{"LAYOUTINFO":{"X":1129,"Y":1087.5}}*/
-    entity PROCESSES {
-        key PROCESS_ID          : String(10) not null;
-            PROCESS_NAME        : String(60) not null;
-            TO_SUB_PROCESSES    : association[0..*] to SUB_PROCESSES    on TO_SUB_PROCESSES.PROCESS_ID = PROCESS_ID; /*OUT*/
-            TO_ACTIVITY         : association[0..*] to ACTIVITY         on TO_ACTIVITY.PROCESS_ID = PROCESS_ID; /*OUT*/
-            TO_BUSINESS_CONTROL : association[0..*] to BUSINESS_CONTROL on TO_BUSINESS_CONTROL.PROCESS_ID = PROCESS_ID; /*OUT*/
-    };
-
-    /*@@LAYOUT{"LAYOUTINFO":{"X":719,"Y":1244.5}}*/
-    entity SUB_PROCESSES {
-        key PROCESS_ID          : String(10) not null; /*ASSOCIATION*/
-        key SUB_PROCESS_ID      : String(10) not null;
-            SUB_PROCESS_NAME    : String(60) not null;
-            TO_PROCESSES        : association[1]    to PROCESSES        on TO_PROCESSES.PROCESS_ID = PROCESS_ID; /*IN*/
-            TO_ACTIVITY         : association[0..*] to ACTIVITY         on TO_ACTIVITY.SUB_PROCESS_ID = SUB_PROCESS_ID; /*OUT*/
-            TO_BUSINESS_CONTROL : association[0..*] to BUSINESS_CONTROL on TO_BUSINESS_CONTROL.SUB_PROCESS_ID = SUB_PROCESS_ID; /*OUT*/
-    };
-
-
-    /*@@LAYOUT{"LAYOUTINFO":{"X":445,"Y":978.5}}*/
-    entity CUSTOMERS {
-        key CUST_ID            : String(10) not null;
-            COMPANY_NAME       : String(60) not null;
-            TO_LOGICAL_SYSTEMS : association[0..*] to LOGICAL_SYSTEMS on TO_LOGICAL_SYSTEMS.CUST_ID = CUST_ID; /*OUT*/
-            TO_USERS           : association[0..*] to USERS           on TO_USERS.CUST_ID = CUST_ID; /*OUT*/
-            TO_RULE_SET        : association[0..*] to RULE_SET        on TO_RULE_SET.CUST_ID = CUST_ID; /*OUT*/
-    };
-
-    /*@@LAYOUT{"LAYOUTINFO":{"X":1145,"Y":937.5}}*/
-    entity LOGICAL_SYSTEMS {
-        key CUST_ID      : String(10) not null; /*ASSOCIATION*/
-        key SYS_ID       : String(60) not null;
-        key CLIENT_ID    : String(10) not null;
-            TO_CUSTOMERS : association[1] to CUSTOMERS on TO_CUSTOMERS.CUST_ID = CUST_ID; /*IN*/
-    };
-
-
-    /*@@LAYOUT{"LAYOUTINFO":{"X":72,"Y":813.5}}*/
-    entity USERS {
-        key CUST_ID                     : String(10) not null; /*ASSOCIATION*/
-        key USER_ID                     : String(60) not null;
-            FIRST_NAME                  : String(60) not null;
-            LAST_NAME                   : String(60) not null;
-            EMAIL                       : String(60) not null;
-            START_DATE                  : String(60);
-            END_DATE                    : String(60);
-            TIME_ZONE                   : String(10);
-            ADMIN_ACCESS                : Boolean;
-            TO_CUSTOMERS                : association[1]    to CUSTOMERS        on TO_CUSTOMERS.CUST_ID = CUST_ID; /*IN*/
-            TO_RULE_SET                 : association[0..*] to RULE_SET         on TO_RULE_SET.OWNER = USER_ID; /*OUT*/
-            TO_ACTIVITY                 : association[0..*] to ACTIVITY         on TO_ACTIVITY.OWNER = USER_ID; /*OUT*/
-            TO_TESTS                    : association[0..*] to TESTS            on TO_TESTS.OWNER = USER_ID; /*OUT*/
-            TO_BUSINESS_CONTROL_OWNER   : association[0..*] to BUSINESS_CONTROL on TO_BUSINESS_CONTROL_OWNER.OWNER = USER_ID; /*OUT*/
-            TO_BUSINESS_CONTROL_MONITOR : association[0..*] to BUSINESS_CONTROL on TO_BUSINESS_CONTROL_MONITOR.MONITOR = USER_ID; /*OUT*/
-    };
-
-    /*@@LAYOUT{"LAYOUTINFO":{"X":33,"Y":9.5}}*/
+ /*@@LAYOUT{"LAYOUTINFO":{"X":33,"Y":9.5}}*/
     entity RULE_SET {
         key CUST_ID             : String(10) not null; /*ASSOCIATION*/
         key RS_ID               : String(10) not null;
@@ -217,21 +152,6 @@ context masterdata {
             TO_RISK_TEST  : association[1] to RISK_TEST on TO_RISK_TEST.RISK_ID = RISK_ID; /*OUT*/
     };
 
-    /*@@LAYOUT{"LAYOUTINFO":{"X":-733,"Y":-73.5}}*/
-    entity RISK_RATING {
-        key RISK_RATING_ID              : String(10) not null;
-        key RS_ID                       : String(10) not null; /*ASSOCIATION*/
-            CONSEQUENCE                 : Integer    not null;
-            LIKELIHOOD                  : Integer    not null;
-            C_X_L                       : Integer    not null;
-            CL                          : Integer;
-            DEFAULT_MATRIX_RATING       : String(20);
-            RANGE                       : Integer;
-            DEFAULT_RISK_CLASSIFICATION : String(10);
-            DEFAULT_RISK_RANGE          : String(20);
-            TO_RULE_SET                 : association[1]    to RULE_SET  on TO_RULE_SET.RS_ID = RS_ID; /*IN*/
-            TO_RISK_TEST                : association[0..*] to RISK_TEST on TO_RISK_TEST.RISK_RATING_ID = RISK_RATING_ID; /*OUT*/
-    };
 
     /*@@LAYOUT{"LAYOUTINFO":{"X":-291,"Y":-388.5}}*/
     entity RISK_TEST {
@@ -289,4 +209,5 @@ context masterdata {
             TO_TESTS            : association[1] to TESTS            on TO_TESTS.TST_ID = TST_ID; /*IN*/
             TO_BUSINESS_CONTROL : association[1] to BUSINESS_CONTROL on TO_BUSINESS_CONTROL.BC_ID = BC_ID; /*IN*/
     };
+
 };

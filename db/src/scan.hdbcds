@@ -1,33 +1,33 @@
 namespace cerpass.db;
 
-using cerpass.db :: masterdata.MODULE;
-using cerpass.db :: masterdata.SUB_MODULE;
-using cerpass.db :: masterdata.PROCESSES;
-using cerpass.db :: masterdata.SUB_PROCESSES;
-using cerpass.db :: masterdata.CUSTOMERS;
-using cerpass.db :: masterdata.LOGICAL_SYSTEMS;
-using cerpass.db :: masterdata.USERS;
-using cerpass.db :: masterdata.RULE_SET;
-using cerpass.db :: masterdata.ACTIVITY;
-using cerpass.db :: masterdata.ACT_TCODE; //In Use
-using cerpass.db :: masterdata.ACT_AUTH; //In Use
-using cerpass.db :: masterdata.TESTS;
-using cerpass.db :: masterdata.TEST_ACTIVITY;
-using cerpass.db :: masterdata.RISKS;
-using cerpass.db :: masterdata.RISK_RATING;
-using cerpass.db :: masterdata.RISK_TEST;
-using cerpass.db :: masterdata.BUSINESS_CONTROL;
-using cerpass.db :: masterdata.TESTS_BUSINESS_CONTROL;
-using cerpass.db :: sapdata.TSTC;
-using cerpass.db :: sapdata.TOBJT;
-using cerpass.db :: sapdata.UST12; //In Use
-using cerpass.db :: sapdata.UST10S; //In Use
-using cerpass.db :: sapdata.UST10C; //In Use
-using cerpass.db :: sapdata.USR10;
-using cerpass.db :: sapdata.AGR_1016; //In Use
-using cerpass.db :: sapdata.UST04; //In Use
-using cerpass.db :: sapdata.AGR_AGRS; //In Use
-using cerpass.db :: sapdata.USR02; //In Use
+using cerpass.db :: masterData.MODULE;
+using cerpass.db :: masterData.SUB_MODULE;
+using cerpass.db :: masterData.PROCESSES;
+using cerpass.db :: masterData.SUB_PROCESSES;
+using cerpass.db :: masterData.CUSTOMERS;
+using cerpass.db :: masterData.LOGICAL_SYSTEMS;
+using cerpass.db :: masterData.RISK_RATING;
+using cerpass.db :: configData.USERS;
+using cerpass.db :: ruleSet.RULE_SET;
+using cerpass.db :: ruleSet.ACTIVITY;
+using cerpass.db :: ruleSet.ACT_TCODE; //In Use
+using cerpass.db :: ruleSet.ACT_AUTH; //In Use
+using cerpass.db :: ruleSet.TESTS;
+using cerpass.db :: ruleSet.TEST_ACTIVITY; //In Use
+using cerpass.db :: ruleSet.RISKS;
+using cerpass.db :: ruleSet.RISK_TEST;
+using cerpass.db :: ruleSet.BUSINESS_CONTROL;
+using cerpass.db :: ruleSet.TESTS_BUSINESS_CONTROL;
+using cerpass.db :: sourceData.TSTC;
+using cerpass.db :: sourceData.TOBJT;
+using cerpass.db :: sourceData.UST12; //In Use
+using cerpass.db :: sourceData.UST10S; //In Use
+using cerpass.db :: sourceData.UST10C; //In Use
+using cerpass.db :: sourceData.USR10;
+using cerpass.db :: sourceData.AGR_1016; //In Use
+using cerpass.db :: sourceData.UST04; //In Use
+using cerpass.db :: sourceData.AGR_AGRS; //In Use
+using cerpass.db :: sourceData.USR02; //In Use
 
 context scan {
 

@@ -1,7 +1,7 @@
 {
  "format_version": 1,
  "imports": [{
-  "target_table": "cerpass.db::masterdata.MODULE",
+  "target_table": "cerpass.db::masterData.MODULE",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::01module.csv",
@@ -42,7 +42,7 @@
 	
  
  {
-  "target_table": "cerpass.db::masterdata.SUB_MODULE",
+  "target_table": "cerpass.db::masterData.SUB_MODULE",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::02submodule.csv",
@@ -57,7 +57,7 @@
  }, 
 
  {
-  "target_table": "cerpass.db::masterdata.PROCESSES",
+  "target_table": "cerpass.db::masterData.PROCESSES",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::03processes.csv",
@@ -73,7 +73,7 @@
 
 
  {
-  "target_table": "cerpass.db::masterdata.SUB_PROCESSES",
+  "target_table": "cerpass.db::masterData.SUB_PROCESSES",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::04subprocesses.csv",
@@ -89,7 +89,7 @@
 
 
  {
-  "target_table": "cerpass.db::sapdata.TSTC",
+  "target_table": "cerpass.db::sourceData.TSTC",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::05tstc.csv",
@@ -105,7 +105,7 @@
 
 
  {
-  "target_table": "cerpass.db::sapdata.TOBJT",
+  "target_table": "cerpass.db::sourceData.TOBJT",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::06tobjt.csv",
@@ -121,7 +121,7 @@
 
 
  {
-  "target_table": "cerpass.db::masterdata.CUSTOMERS",
+  "target_table": "cerpass.db::masterData.CUSTOMERS",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::07customers.csv",
@@ -137,7 +137,7 @@
 
 
  {
-  "target_table": "cerpass.db::masterdata.LOGICAL_SYSTEMS",
+  "target_table": "cerpass.db::masterData.LOGICAL_SYSTEMS",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::08logicalsystems.csv",
@@ -153,7 +153,7 @@
 
 
  {
-  "target_table": "cerpass.db::masterdata.USERS",
+  "target_table": "cerpass.db::configData.USERS",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::09users.csv",
@@ -169,7 +169,7 @@
 
 
  {
-  "target_table": "cerpass.db::masterdata.RULE_SET",
+  "target_table": "cerpass.db::ruleSet.RULE_SET",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::10ruleset.csv",
@@ -185,7 +185,7 @@
 
 
  {
-  "target_table": "cerpass.db::masterdata.ACTIVITY",
+  "target_table": "cerpass.db::ruleSet.ACTIVITY",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::11activity.csv",
@@ -199,7 +199,7 @@
   "column_mappings": {"ACT_ID": 1,"ACT_NAME": 2,"RS_ID": 3,"ACTIVE": 4,"SEVERITY": 5,"MODULE_ID": 6,"SUB_MODULE_ID": 7,"OWNER": 8,"PROCESS_ID": 9,"SUB_PROCESS_ID": 10,"WORKFLOW_FLAG": 11}
  },
 {
-  "target_table": "cerpass.db::masterdata.ACT_TCODE",
+  "target_table": "cerpass.db::ruleSet.ACT_TCODE",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::12acttcode.csv",
@@ -215,7 +215,7 @@
 
 
  {
-  "target_table": "cerpass.db::masterdata.ACT_AUTH",
+  "target_table": "cerpass.db::ruleSet.ACT_AUTH",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::13actauth.csv",
@@ -231,7 +231,7 @@
 
 
  {
-  "target_table": "cerpass.db::masterdata.TESTS",
+  "target_table": "cerpass.db::ruleSet.TESTS",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::14tests.csv",
@@ -246,7 +246,7 @@
  }, 
 
  {
-  "target_table": "cerpass.db::masterdata.TEST_ACTIVITY",
+  "target_table": "cerpass.db::ruleSet.TEST_ACTIVITY",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::15testactivity.csv",
@@ -263,7 +263,7 @@
 
 
  {
-  "target_table": "cerpass.db::masterdata.RISKS",
+  "target_table": "cerpass.db::ruleSet.RISKS",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::16risks.csv",
@@ -279,7 +279,7 @@
 
 
   {
-  "target_table": "cerpass.db::masterdata.RISK_RATING",
+  "target_table": "cerpass.db::masterData.RISK_RATING",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::17riskrating.csv",
@@ -295,7 +295,7 @@
 
 
  {
-  "target_table": "cerpass.db::masterdata.RISK_TEST",
+  "target_table": "cerpass.db::ruleSet.RISK_TEST",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::18risktest.csv",
@@ -310,7 +310,7 @@
  }, 
 
  {
-  "target_table": "cerpass.db::masterdata.BUSINESS_CONTROL",
+  "target_table": "cerpass.db::ruleSet.BUSINESS_CONTROL",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::19businesscontrol.csv",
@@ -325,7 +325,7 @@
  }, 
 
  {
-  "target_table": "cerpass.db::masterdata.TESTS_BUSINESS_CONTROL",
+  "target_table": "cerpass.db::ruleSet.TESTS_BUSINESS_CONTROL",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::20testsbusinesscontrol.csv",
@@ -340,7 +340,7 @@
  },
  
  {
-  "target_table": "cerpass.db::sapdata.UST12",
+  "target_table": "cerpass.db::sourceData.UST12",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::UST12.csv",
@@ -355,7 +355,7 @@
  },
  
  {
-  "target_table": "cerpass.db::sapdata.UST10S",
+  "target_table": "cerpass.db::sourceData.UST10S",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::UST10S.csv",
@@ -370,7 +370,7 @@
  },
  
  {
-  "target_table": "cerpass.db::sapdata.UST10C",
+  "target_table": "cerpass.db::sourceData.UST10C",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::UST10C.csv",
@@ -385,7 +385,7 @@
  },
  
  {
-  "target_table": "cerpass.db::sapdata.USR10",
+  "target_table": "cerpass.db::sourceData.USR10",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::USR10.csv",
@@ -400,7 +400,7 @@
  },
  
   {
-  "target_table": "cerpass.db::sapdata.AGR_1016",
+  "target_table": "cerpass.db::sourceData.AGR_1016",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::AGR_1016.csv",
@@ -416,7 +416,7 @@
  
  
    {
-  "target_table": "cerpass.db::sapdata.AGR_PROF",
+  "target_table": "cerpass.db::sourceData.AGR_PROF",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::AGR_PROF.csv",
@@ -431,7 +431,7 @@
  },
  
    {
-  "target_table": "cerpass.db::sapdata.AGR_DEFINE",
+  "target_table": "cerpass.db::sourceData.AGR_DEFINE",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::AGR_DEFINE.csv",
@@ -446,7 +446,7 @@
  },
  
     {
-  "target_table": "cerpass.db::sapdata.AGR_AGRS",
+  "target_table": "cerpass.db::sourceData.AGR_AGRS",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::AGR_AGRS.csv",
@@ -461,7 +461,7 @@
  },
  
      {
-  "target_table": "cerpass.db::sapdata.UST04",
+  "target_table": "cerpass.db::sourceData.UST04",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::UST04.csv",
@@ -478,7 +478,7 @@
  
  
     {
-  "target_table": "cerpass.db::sapdata.USR02",
+  "target_table": "cerpass.db::sourceData.USR02",
   "source_data": {
    "data_type": "CSV",
    "file_name": "cerpass.db.data::USR02.csv",

@@ -1,0 +1,88 @@
+namespace cerpass.db;
+
+using cerpass.db :: ruleSet.RULE_SET; //In Use
+using cerpass.db :: ruleSet.ACTIVITY; //In Use
+using cerpass.db :: ruleSet.ACT_TCODE;
+using cerpass.db :: ruleSet.ACT_AUTH;
+using cerpass.db :: ruleSet.TESTS; //In Use
+using cerpass.db :: ruleSet.TEST_ACTIVITY;
+using cerpass.db :: ruleSet.RISKS;
+using cerpass.db :: ruleSet.RISK_TEST; //In Use
+using cerpass.db :: ruleSet.BUSINESS_CONTROL; //In Use
+using cerpass.db :: ruleSet.TESTS_BUSINESS_CONTROL;
+using cerpass.db :: configData.USERS; //In Use
+
+@OData.publish : true
+context masterData {
+
+    /*@@LAYOUT{"LAYOUTINFO":{"X":348,"Y":-45.5}}*/
+    entity MODULE {
+        key MODULE_ID     : String(10) not null;
+            MODULE_NAME   : String(60) not null;
+            TO_SUB_MODULE : association[0..*] to SUB_MODULE on TO_SUB_MODULE.MODULE_ID = MODULE_ID; /*OUT*/
+            TO_ACTIVITY   : association[0..*] to ACTIVITY   on TO_ACTIVITY.MODULE_ID = MODULE_ID; /*OUT*/
+    };
+
+    /*@@LAYOUT{"LAYOUTINFO":{"X":718,"Y":-93.5}}*/
+    entity SUB_MODULE {
+        key MODULE_ID       : String(10) not null; /*ASSOCIATION*/
+        key SUB_MODULE_ID   : String(10) not null;
+            SUB_MODULE_NAME : String(60) not null;
+            TO_MODULE       : association[1] to MODULE   on TO_MODULE.MODULE_ID = MODULE_ID; /*IN*/
+            TO_ACTIVITY     : association[1] to ACTIVITY on TO_ACTIVITY.SUB_MODULE_ID = SUB_MODULE_ID; /*OUT*/
+    };
+
+    /*@@LAYOUT{"LAYOUTINFO":{"X":1129,"Y":1087.5}}*/
+    entity PROCESSES {
+        key PROCESS_ID          : String(10) not null;
+            PROCESS_NAME        : String(60) not null;
+            TO_SUB_PROCESSES    : association[0..*] to SUB_PROCESSES    on TO_SUB_PROCESSES.PROCESS_ID = PROCESS_ID; /*OUT*/
+            TO_ACTIVITY         : association[0..*] to ACTIVITY         on TO_ACTIVITY.PROCESS_ID = PROCESS_ID; /*OUT*/
+            TO_BUSINESS_CONTROL : association[0..*] to BUSINESS_CONTROL on TO_BUSINESS_CONTROL.PROCESS_ID = PROCESS_ID; /*OUT*/
+    };
+
+    /*@@LAYOUT{"LAYOUTINFO":{"X":719,"Y":1244.5}}*/
+    entity SUB_PROCESSES {
+        key PROCESS_ID          : String(10) not null; /*ASSOCIATION*/
+        key SUB_PROCESS_ID      : String(10) not null;
+            SUB_PROCESS_NAME    : String(60) not null;
+            TO_PROCESSES        : association[1]    to PROCESSES        on TO_PROCESSES.PROCESS_ID = PROCESS_ID; /*IN*/
+            TO_ACTIVITY         : association[0..*] to ACTIVITY         on TO_ACTIVITY.SUB_PROCESS_ID = SUB_PROCESS_ID; /*OUT*/
+            TO_BUSINESS_CONTROL : association[0..*] to BUSINESS_CONTROL on TO_BUSINESS_CONTROL.SUB_PROCESS_ID = SUB_PROCESS_ID; /*OUT*/
+    };
+
+
+    /*@@LAYOUT{"LAYOUTINFO":{"X":445,"Y":978.5}}*/
+    entity CUSTOMERS {
+        key CUST_ID            : String(10) not null;
+            COMPANY_NAME       : String(60) not null;
+            TO_LOGICAL_SYSTEMS : association[0..*] to LOGICAL_SYSTEMS on TO_LOGICAL_SYSTEMS.CUST_ID = CUST_ID; /*OUT*/
+            TO_USERS           : association[0..*] to USERS           on TO_USERS.CUST_ID = CUST_ID; /*OUT*/
+            TO_RULE_SET        : association[0..*] to RULE_SET        on TO_RULE_SET.CUST_ID = CUST_ID; /*OUT*/
+    };
+
+    /*@@LAYOUT{"LAYOUTINFO":{"X":1145,"Y":937.5}}*/
+    entity LOGICAL_SYSTEMS {
+        key CUST_ID      : String(10) not null; /*ASSOCIATION*/
+        key SYS_ID       : String(60) not null;
+        key CLIENT_ID    : String(10) not null;
+            TO_CUSTOMERS : association[1] to CUSTOMERS on TO_CUSTOMERS.CUST_ID = CUST_ID; /*IN*/
+    };
+
+    /*@@LAYOUT{"LAYOUTINFO":{"X":-733,"Y":-73.5}}*/
+    entity RISK_RATING {
+        key RISK_RATING_ID              : String(10) not null;
+        key RS_ID                       : String(10) not null; /*ASSOCIATION*/
+            CONSEQUENCE                 : Integer    not null;
+            LIKELIHOOD                  : Integer    not null;
+            C_X_L                       : Integer    not null;
+            CL                          : Integer;
+            DEFAULT_MATRIX_RATING       : String(20);
+            RANGE                       : Integer;
+            DEFAULT_RISK_CLASSIFICATION : String(10);
+            DEFAULT_RISK_RANGE          : String(20);
+            TO_RULE_SET                 : association[1]    to RULE_SET  on TO_RULE_SET.RS_ID = RS_ID; /*IN*/
+            TO_RISK_TEST                : association[0..*] to RISK_TEST on TO_RISK_TEST.RISK_RATING_ID = RISK_RATING_ID; /*OUT*/
+    };
+
+};
