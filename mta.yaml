@@ -25,30 +25,10 @@ modules:
             {"service_name_for_DefaultDB" : "~{hdi-container-name}"}]'
 
 
- - name: DemoVizFrame
-   type: html5
-   path: DemoVizFrame
-   parameters:
-      disk-quota: 256M
-      memory: 256M
-   build-parameters:
-      builder: grunt
-   requires:
-    - name: uaa_DemoVizFrame
-    - name: dest_DemoVizFrame
+ 
 
 
- - name: menuTest
-   type: html5
-   path: menuTest
-   parameters:
-      disk-quota: 256M
-      memory: 256M
-   build-parameters:
-      builder: grunt
-   requires:
-    - name: uaa_menuTest
-    - name: dest_menuTest
+ 
     
 resources:
  - name: hdi_db
