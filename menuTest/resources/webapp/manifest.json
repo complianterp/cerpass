@@ -1,7 +1,7 @@
 {
 	"_version": "1.5.0",
 	"sap.app": {
-		"id": "webweb",
+		"id": "menumenuTest",
 		"type": "application",
 		"i18n": "i18n/i18n.properties",
 		"applicationVersion": {
@@ -40,7 +40,7 @@
 
 	"sap.ui5": {
 		"rootView": {
-			"viewName": "webweb.view.View1",
+			"viewName": "menumenuTest.view.View1",
 			"type": "XML"
 		},
 		"dependencies": {
@@ -63,7 +63,11 @@
 			"i18n": {
 				"type": "sap.ui.model.resource.ResourceModel",
 				"settings": {
-					"bundleName": "webweb.i18n.i18n"
+					"bundleName": "menumenuTest.i18n.i18n"
+				},
+			"Model": {
+				"type": "sap.ui.model.json.JSONModel",
+				"uri": "model/ChartData.json"
 				}
 			}
 		},

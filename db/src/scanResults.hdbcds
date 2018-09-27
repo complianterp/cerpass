@@ -1,0 +1,4 @@
+namespace cerpass.db;
+
+context scanResults {
+};

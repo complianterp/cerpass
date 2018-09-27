@@ -1793,6 +1793,5 @@ UNION
 			P01.OBJECT_SUB_TYPE,
 			P01.TCODE_VON//,
 			};
-			
-	//End Work in progress
+	
 };

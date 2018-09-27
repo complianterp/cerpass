@@ -1,10 +1,11 @@
 namespace cerpass.db;
 
 using cerpass.db :: scan.SCAN2_P04_FULL;
+using cerpass.db :: scan.SCAN3_P10_ACT_COUNT_MATCH;
 
-
+@OData.publish : true
 context reports {
-	@OData.publish : true
+
     view PieTest as
         select from "SCAN2_P04_FULL" distinct
         {
@@ -18,4 +19,36 @@ context reports {
         order by
             OBJECT_TYPE,
             OBJECT_SUB_TYPE;
+
+    //------------------------------------------------------------------------------------------------------
+
+		VIEW SCAN3_MATCH_DISTINCT as
+		select from SCAN3_P10_ACT_COUNT_MATCH as P09
+		distinct {
+			P09.TST_ID,
+			P09.OBJECT_ID,
+			P09.OBJECT_TYPE,
+			P09.OBJECT_SUB_TYPE
+		};
+
+    //------------------------------------------------------------------------------------------------------	
+	
+		VIEW SCAN3_OUTPUT as
+		select from SCAN3_MATCH_DISTINCT
+		 {
+			OBJECT_TYPE,
+			OBJECT_SUB_TYPE,
+			count(OBJECT_ID) as Test_Occurrences
+		}
+		
+		group by 
+			OBJECT_TYPE,
+			OBJECT_SUB_TYPE;
+
+		entity SCAN3_OUTPUT_TBL {
+        key OBJECT_TYPE        : String(60) not null; /*ASSOCIATION*/
+        key OBJECT_SUB_TYPE       : String(60) not null; /*ASSOCIATION*/
+        key Test_Occurrences : Integer    not null;
+    };
+	
 };

@@ -25,12 +25,17 @@ modules:
             {"service_name_for_DefaultDB" : "~{hdi-container-name}"}]'
 
 
+ - name: DemoVizFrame
+   type: html5
+   path: DemoVizFrame
+
+
  
 
 
- - name: web
+ - name: menuTest
    type: html5
-   path: web
+   path: menuTest
 
 resources:
  - name: hdi_db
