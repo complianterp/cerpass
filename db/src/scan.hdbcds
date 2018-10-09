@@ -29,6 +29,7 @@ using cerpass.db :: sourceData.UST04; //In Use
 using cerpass.db :: sourceData.AGR_AGRS; //In Use
 using cerpass.db :: sourceData.USR02; //In Use
 
+@OData.publish : true
 context scan {
 
     //SCAN AUTH ---------------------------------------------------------------------------------------------------------------------------------------------

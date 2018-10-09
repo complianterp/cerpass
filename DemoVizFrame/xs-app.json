@@ -1,0 +1,14 @@
+{
+  "welcomeFile": "/DemoVizFrame/index.html",
+  "authenticationMethod": "route",
+  "logout": {
+    "logoutEndpoint": "/do/logout"
+  },
+  "routes": [
+    {
+      "source": "^/DemoVizFrame/(.*)$",
+      "target": "$1",
+      "localDir": "webapp"
+    }
+  ]
+}

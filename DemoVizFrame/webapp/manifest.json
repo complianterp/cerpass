@@ -1,0 +1,120 @@
+{
+	"_version": "1.5.0",
+	"sap.app": {
+		"id": "DemoVizFrameDemoVizFrame",
+		"type": "application",
+		"i18n": "i18n/i18n.properties",
+		"applicationVersion": {
+			"version": "1.0.0",
+	"dataSources": {
+	  "SCAN3_OUTPUT": {
+		"uri": "https://complianterp.australiaeast.cloudapp.azure.com:51055/java/odata/v4/cerpass.db._.reports/$metadata#cerpass.db._.reports.SCAN3_OUTPUT_TBL",
+		"type": "OData",
+		"settings": {
+		  "odataVersion": "4.0"
+		}
+	  }
+	}
+		},
+		"title": "{{appTitle}}",
+		"description": "{{appDescription}}",
+		"resources": "resources.json",
+		"ach": "ach",
+		"sourceTemplate": {
+			"id": "hanatemplates.basicSAPUI5ApplicationProject",
+			"version": "0.0.0"
+		}
+	},
+
+	"sap.ui": {
+		"technology": "UI5",
+		"icons": {
+			"icon": "",
+			"favIcon": "",
+			"phone": "",
+			"phone@2": "",
+			"tablet": "",
+			"tablet@2": ""
+		},
+		"deviceTypes": {
+			"desktop": true,
+			"tablet": true,
+			"phone": true
+		},
+		"supportedThemes": [
+			"sap_hcb",
+			"sap_bluecrystal"
+		]
+	},
+
+	"sap.ui5": {
+		"rootView": {
+			"viewName": "DemoVizFrameDemoVizFrame.view.View1",
+			"type": "XML"
+		},
+		"dependencies": {
+			"minUI5Version": "1.30.0",
+			"libs": {
+				"sap.ui.core": {},
+				"sap.m": {},
+				"sap.ui.layout": {},
+				"sap.ushell": {},
+				"sap.collaboration": {},
+				"sap.ui.comp": {},
+				"sap.uxap": {}
+			}
+		},
+		"contentDensities": {
+			"compact": true,
+			"cozy": true
+		},
+		"models": {
+			"i18n": {
+				"type": "sap.ui.model.resource.ResourceModel",
+				"settings": {
+					"bundleName": "DemoVizFrameDemoVizFrame.i18n.i18n"
+				}
+			},
+			"Model": {
+				"type": "sap.ui.model.json.JSONModel",
+				"uri": "model/ChartData.json"
+				},
+			"MenuModel": {
+				"type": "sap.ui.model.json.JSONModel",
+				"uri": "model/Menu.json"
+				},
+			"SCAN3_OUTPUT": {
+				"dataSource": "SCAN3_OUTPUT"
+			}
+		},
+		"resources": {
+			"css": [{
+				"uri": "css/style.css"
+			}]
+		},
+		"routing": {
+			"config": {
+				"routerClass": "sap.m.routing.Router",
+				"viewType": "XML",
+				"async": true,
+				"viewPath": "DemoVizFrame.DemoVizFrame.view",
+				"controlAggregation": "pages",
+				"controlId": "idAppControl",
+				"clearControlAggregation": false
+			},
+			"routes": [{
+				"name": "RouteView1",
+				"pattern": "RouteView1",
+				"target": ["TargetView1"]
+			}],
+			"targets": {
+				"TargetView1": {
+					"viewType": "XML",
+					"transition": "slide",
+					"clearControlAggregation": false,
+					"viewName": "View1"
+				}
+			}
+		}
+	}
+}

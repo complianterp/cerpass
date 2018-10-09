@@ -125,6 +125,7 @@ context ruleSet {
             GROUP_NAME   : String(60);
             TO_RULE_SET  : association[1] to RULE_SET on TO_RULE_SET.RS_ID = RS_ID; /*IN*/
             TO_TESTS     : association[1] to TESTS    on TO_TESTS.TST_ID = TST_ID; /*IN*/
+            TO_TEST_ACTIVITY : association[1] to TEST_ACTIVITY on TO_TEST_ACTIVITY.GROUP_NUMBER = GROUP_NUMBER; /*OUT*/
     };
 
     /*@@LAYOUT{"LAYOUTINFO":{"X":-533,"Y":221.5}}*/
@@ -133,10 +134,11 @@ context ruleSet {
         key TST_ID       : String(10) not null; /*ASSOCIATION*/
         key ACT_ID       : String(10) not null; /*ASSOCIATION*/
         key TCODE_VON    : String(20) not null;
-        key GROUP_NUMBER : Integer    not null;
+        key GROUP_NUMBER : Integer    not null; /*ASSOCIATION*/
             TO_RULE_SET  : association[1] to RULE_SET on TO_RULE_SET.RS_ID = RS_ID; /*IN*/
             TO_TESTS     : association[1] to TESTS    on TO_TESTS.TST_ID = TST_ID; /*IN*/
             TO_ACTIVITY  : association[1] to ACTIVITY on TO_ACTIVITY.ACT_ID = ACT_ID; /*IN*/
+            TO_TEST_GROUP  : association[1] to TESTS_GROUP on TO_TEST_GROUP.GROUP_NUMBER = GROUP_NUMBER; /*IN*/
 
     };
 
